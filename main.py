@@ -2,10 +2,8 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
-
 conn = sqlite3.connect('railwaydb')
 c = conn.cursor()
-
 
 def create_db():
     c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
@@ -13,12 +11,11 @@ def create_db():
     c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
     conn.commit()
 
-
 def add_train_destination(train_name, train_number, start_destination, end_destination):
     c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
     conn.commit()
     create_seat_table(train_number)
-
+    st.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
 
 def create_seat_table(train_number):
     c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
@@ -26,7 +23,7 @@ def create_seat_table(train_number):
     insert_seats(train_number)
 
 def insert_seats(train_number):
-    for i in range(1, 201):  # Assuming there are 200 seats per train
+    for i in range(1, 201):
         val = categorize_seat(i)
         parameters = (i, val, 0, '', '', '')
         c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
@@ -46,7 +43,7 @@ def view_seat(train_number):
         result = seat_query.fetchall()
         if result:
             df = pd.DataFrame(result, columns=['Seat Number', 'Seat Type', 'Booked', 'Passenger Name', 'Passenger Age', 'Passenger Gender'])
-            st.dataframe(df.style.set_properties(**{'text-align': 'center'}))  # Center align DataFrame
+            st.dataframe(df.style.set_properties(**{'text-align': 'center'}))
         else:
             st.info("No seats found for this train.")
     except sqlite3.Error as e:
@@ -59,10 +56,12 @@ def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, 
             c.execute(f"UPDATE seats_{train_number} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", (passenger_name, passenger_age, passenger_gender, seat_number))
             conn.commit()
             st.success("Ticket booked successfully.")
+            st.info(f"Seat {seat_number} booked for {passenger_name}.")
         else:
             st.warning("No available seats of this type.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
+
 def allocate_seat(train_number, seat_type):
     try:
         seat_query = c.execute(f"SELECT seat_number FROM seats_{train_number} WHERE booked=0 AND seat_type=? ORDER BY seat_number ASC LIMIT 1", (seat_type,))
@@ -86,7 +85,6 @@ def cancel_train(train_number):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-
 def delete_train(train_number):
     try:
         train_data = search_train(train_number, '')
@@ -101,7 +99,6 @@ def delete_train(train_number):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-
 def search_train(train_number, train_name):
     try:
         train_query = c.execute("SELECT * FROM trains WHERE train_no=? AND train_name=?", (train_number, train_name))
@@ -110,7 +107,6 @@ def search_train(train_number, train_name):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
         return None
-
 
 def main():
     st.title("Railway Management System")
@@ -143,7 +139,6 @@ def main():
 
         if st.sidebar.button("Add Train"):
             add_train_destination(train_name, train_number, start_destination, end_destination)
-            st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
 
     elif operation == "Cancel Train":
         train_number = st.sidebar.text_input("Train Number to Cancel")
