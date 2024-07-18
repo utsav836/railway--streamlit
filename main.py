@@ -125,7 +125,7 @@ def main():
 
         if operation == "Create Database" or operation == "डेटाबेस बनाएं":
             create_db()
-            st.sidebar.success("Database created successfully / डेटाबेस सफलतापूर्वक बनाया गया.")
+          
 
         elif operation == "Add Train Destination" or operation == "ट्रेन डेस्टिनेशन जोड़ें":
             train_name = st.sidebar.text_input("Train Name / ट्रेन का नाम")
@@ -169,7 +169,7 @@ def main():
                 st.sidebar.success(f"Train found / ट्रेन मिली: {train_data}")
             else:
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
-
+        st.sidebar.success("Database created successfully / डेटाबेस सफलतापूर्वक बनाया गया.")
     conn.close()
 
 if __name__ == "__main__":
