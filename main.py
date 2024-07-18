@@ -168,41 +168,25 @@ def main():
             else:
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
 
-    # Ensure the language selection is always visible
-    if language == "English":
-        st.markdown(
-            """
-            <style>
-            .center {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                font-size: 24px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-    elif language == "हिन्दी":
-        st.markdown(
-            """
-            <style>
-            .center {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                font-size: 24px;
-                direction: rtl;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+    # Center aligning operations
+    st.markdown(
+        """
+        <style>
+        .center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 24px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.markdown('<div class="center">Choose Language / भाषा चुनें:</div>', unsafe_allow_html=True)
+    st.markdown('<div class="center">Operations</div>', unsafe_allow_html=True)
 
+    # Add operation specific content here if needed
 
 if __name__ == "__main__":
     main()
