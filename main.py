@@ -120,34 +120,85 @@ def search_train(train_number, train_name):
 
 # Main function to run the Streamlit app
 def main():
-    st.title("Railway Management System")
+    st.sidebar.title("Operations")
+    language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"])
 
-    # Language selection
-    language = st.radio("Choose Language", ["English", "हिन्दी"])
-
-    # Set title based on language selection
     if language == "English":
-        st.header("Options")
-        options = [
-            "Create Database", "Add Train Destination", "Cancel Train", 
-            "Delete Train", "View Seats", "Book Tickets", "Search Train"
-        ]
+        st.title("Railway Management System")
     elif language == "हिन्दी":
-        st.header("विकल्प")
-        options = [
-            "डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें", 
-            "ट्रेन हटाएं", "सीटें देखें", "टिकट बुक करें", "ट्रेन खोजें"
-        ]
+        st.title("रेलवे प्रबंधन प्रणाली")
+        st.markdown(
+            """
+            <style>
+            .center {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Display options centered in the layout
-    with st.container():
-        for option in options:
-            st.button(option, key=option)
+    if language == "English":
+        operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
+    elif language == "हिन्दी":
+        operation = st.sidebar.selectbox("ऑपरेशन चुनें", ["डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें", "ट्रेन हटाएं", "सीटें देखें", "टिकट बुक करें", "ट्रेन खोजें"])
 
-# Run the main function when the script is executed
-if __name__ == "__main__":
-    create_db()  # Ensure database is created on script start
-    main()
+    if st.sidebar.button("Perform Operation / कार्य पूरा करें"):
+        if operation == "Create Database" or operation == "डेटाबेस बनाएं":
+            create_db()
+            st.sidebar.success("Database created successfully / डेटाबेस सफलतापूर्वक बनाया गया.")
 
-# Close the SQLite connection after operations are done
+        elif operation == "Add Train Destination" or operation == "ट्रेन डेस्टिनेशन जोड़ें":
+            train_name = st.sidebar.text_input("Train Name / ट्रेन का नाम")
+            train_number = st.sidebar.text_input("Train Number / ट्रेन नंबर")
+            start_destination = st.sidebar.text_input("Start Destination / प्रारंभिक स्थान")
+            end_destination = st.sidebar.text_input("End Destination / अंतिम स्थान")
+
+            add_train_destination(train_name, train_number, start_destination, end_destination)
+            st.sidebar.success(f"Train added successfully / ट्रेन सफलतापूर्वक जोड़ी गई: {train_name}, Train Number / ट्रेन नंबर: {train_number}, From / से: {start_destination}, To / तक: {end_destination}")
+
+        elif operation == "Cancel Train" or operation == "ट्रेन रद्द करें":
+            train_number = st.sidebar.text_input("Train Number to Cancel / रद्द करने के लिए ट्रेन नंबर")
+
+            cancel_train(train_number)
+
+        elif operation == "Delete Train" or operation == "ट्रेन हटाएं":
+            train_number = st.sidebar.text_input("Train Number to Delete / हटाने के लिए ट्रेन नंबर")
+
+            delete_train(train_number)
+
+        elif operation == "View Seats" or operation == "सीटें देखें":
+            train_number = st.sidebar.text_input("Enter Train Number to View Seats / सीटें देखने के लिए ट्रेन नंबर दर्ज करें")
+
+            view_seat(train_number)
+
+        elif operation == "Book Tickets" or operation == "टिकट बुक करें":
+            train_number = st.sidebar.text_input("Enter Train Number to Book Tickets / टिकट बुक करने के लिए ट्रेन नंबर दर्ज करें")
+            passenger_name = st.sidebar.text_input("Passenger Name / यात्री का नाम")
+            passenger_age = st.sidebar.text_input("Passenger Age / यात्री की आयु")
+            passenger_gender = st.sidebar.selectbox("Passenger Gender / यात्री का लिंग", ["Male / पुरुष", "Female / महिला", "Other / अन्य"])
+            seat_type = st.sidebar.selectbox("Seat Type / सीट का प्रकार", ["window / खिड़की", "aisle / गलियारा", "middle / मध्य"])
+
+            book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+
+        elif operation == "Search Train" or operation == "ट्रेन खोजें":
+            train_number = st.sidebar.text_input("Enter Train Number to Search / खोज के लिए ट्रेन नंबर दर्ज करें")
+            train_name = st.sidebar.text_input("Enter Train Name (optional) / ट्रेन का नाम दर्ज करें (ऐच्छिक)")
+
+            train_data = search_train(train_number, train_name)
+            if train_data:
+                st.sidebar.success(f"Train found / ट्रेन मिली: {train_data}")
+            else:
+                st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
+
+# Close SQLite connection
+@st.cache(hash_funcs={sqlite3.Connection: id})
+def get_connection():
+    return sqlite3.connect("railwaydb.db", check_same_thread=False)
+
 conn.close()
+
+``
