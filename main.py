@@ -1,7 +1,7 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
-from streamlit import components
+import speech_recognition as sr  # Importing Speech Recognition library
 
 # Establish SQLite connection
 conn = sqlite3.connect('railwaydb')
@@ -119,39 +119,48 @@ def search_train(train_number, train_name):
         st.error(f"SQLite error: {e}")
         return None
 
+# Function for speech recognition
+def recognize_speech():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("Speak now...")
+        audio = r.listen(source)
+
+    try:
+        spoken_text = r.recognize_google(audio)
+        return spoken_text.lower()
+    except sr.UnknownValueError:
+        st.warning("Could not understand audio.")
+        return None
+    except sr.RequestError:
+        st.error("Speech recognition service unavailable.")
+        return None
+
 # Main function to run the Streamlit app
 def main():
-    st.title("Railway Management System")
-    st.markdown(
-        """
-        <style>
-        .center {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
-        .option {
-            margin-bottom: 10px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    st.info("Click the button or speak 'English' or 'Hindi'")
+    spoken_language = recognize_speech()
+    if spoken_language:
+        if "english" in spoken_language:
+            language = "English"
+        elif "hindi" in spoken_language or "हिंदी" in spoken_language:
+            language = "हिन्दी"
+        else:
+            st.warning("Unsupported language. Defaulting to English.")
+            language = "English"
+    else:
+        language = "English"
 
-    # Language selection using speech recognition
-    language = st.sidebar.radio("Select Language / भाषा चुनें", ["English", "हिन्दी"])
-
-    # Display options based on selected language
     if language == "English":
-        st.header("Options / विकल्प")
+        st.title("Railway Management System")
+        st.header("Options")
         options = [
             "Create Database", "Add Train Destination", "Cancel Train", 
             "Delete Train", "View Seats", "Book Tickets", "Search Train"
         ]
     elif language == "हिन्दी":
-        st.header("विकल्प / Options")
+        st.title("रेलवे प्रबंधन प्रणाली")
+        st.header("विकल्प")
         options = [
             "डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें", 
             "ट्रेन हटाएं", "सीटें देखें", "टिकट बुक करें", "ट्रेन खोजें"
@@ -160,10 +169,11 @@ def main():
     # Display options centered in the layout
     with st.container():
         for option in options:
-            st.button(option, key=option, class_='option')
+            st.button(option, key=option)
 
 # Run the main function when the script is executed
 if __name__ == "__main__":
+    create_db()  # Ensure database is created on script start
     main()
 
 # Close the SQLite connection after operations are done
