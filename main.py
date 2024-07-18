@@ -112,24 +112,8 @@ def main():
 
     if language == "English":
         st.title("Railway Management System")
-        st.markdown('<style>.center { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 24px; }</style>', unsafe_allow_html=True)
     elif language == "हिन्दी":
         st.title("रेलवे प्रबंधन प्रणाली")
-        st.markdown('<style>.center { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 24px; }</style>', unsafe_allow_html=True)
-        st.markdown(
-            """
-            <style>
-            .center {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                font-size: 24px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
 
     if language == "English":
         operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
@@ -184,4 +168,42 @@ def main():
             else:
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
 
-conn.close()
+    # Ensure the language selection is always visible
+    if language == "English":
+        st.markdown(
+            """
+            <style>
+            .center {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                font-size: 24px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+    elif language == "हिन्दी":
+        st.markdown(
+            """
+            <style>
+            .center {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                font-size: 24px;
+                direction: rtl;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown('<div class="center">Choose Language / भाषा चुनें:</div>', unsafe_allow_html=True)
+
+
+if __name__ == "__main__":
+    main()
+    conn.close()
