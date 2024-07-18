@@ -5,25 +5,21 @@ import pandas as pd
 conn = sqlite3.connect('railwaydb')
 c = conn.cursor()
 
-
 def create_db():
     c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
     c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
     c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
     conn.commit()
 
-
 def add_train_destination(train_name, train_number, start_destination, end_destination):
     c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
     conn.commit()
     create_seat_table(train_number)
 
-
 def create_seat_table(train_number):
     c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
     conn.commit()
     insert_seats(train_number)
-
 
 def insert_seats(train_number):
     for i in range(1, 201): 
@@ -32,7 +28,6 @@ def insert_seats(train_number):
         c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
     conn.commit()
 
-
 def categorize_seat(seat_number):
     if seat_number % 10 in [0, 4, 5, 9]:
         return "window"
@@ -40,7 +35,6 @@ def categorize_seat(seat_number):
         return "aisle"
     else:
         return "middle"
-
 
 def view_seat(train_number):
     try:
@@ -53,7 +47,6 @@ def view_seat(train_number):
             st.info("No seats found for this train.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
-
 
 def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
@@ -76,7 +69,6 @@ def allocate_seat(train_number, seat_type):
         st.error(f"SQLite error: {e}")
         return None
 
-
 def cancel_train(train_number):
     try:
         train_data = search_train(train_number, '')
@@ -90,7 +82,6 @@ def cancel_train(train_number):
             st.warning(f"Train {train_number} does not exist.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
-
 
 def delete_train(train_number):
     try:
@@ -106,7 +97,6 @@ def delete_train(train_number):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-
 def search_train(train_number, train_name):
     try:
         train_query = c.execute("SELECT * FROM trains WHERE train_no=? AND train_name=?", (train_number, train_name))
@@ -117,13 +107,15 @@ def search_train(train_number, train_name):
         return None
 
 def main():
-  
-    language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"])
+    st.sidebar.title("Operations")
+    language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"], key='language_select')
 
     if language == "English":
         st.title("Railway Management System")
+        st.markdown('<style>.center { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 24px; }</style>', unsafe_allow_html=True)
     elif language == "हिन्दी":
         st.title("रेलवे प्रबंधन प्रणाली")
+        st.markdown('<style>.center { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 24px; }</style>', unsafe_allow_html=True)
         st.markdown(
             """
             <style>
@@ -132,12 +124,13 @@ def main():
                 justify-content: center;
                 align-items: center;
                 height: 100vh;
+                font-size: 24px;
             }
             </style>
             """,
             unsafe_allow_html=True
         )
-        st.sidebar.title("Operations")
+
     if language == "English":
         operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
     elif language == "हिन्दी":
@@ -190,6 +183,5 @@ def main():
                 st.sidebar.success(f"Train found / ट्रेन मिली: {train_data}")
             else:
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
-
 
 conn.close()
