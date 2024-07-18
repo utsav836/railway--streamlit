@@ -117,7 +117,7 @@ def search_train(train_number, train_name):
         return None
 
 def main():
-    st.sidebar.title("Operations")
+  
     language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"])
 
     if language == "English":
@@ -137,7 +137,7 @@ def main():
             """,
             unsafe_allow_html=True
         )
-
+        st.sidebar.title("Operations")
     if language == "English":
         operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
     elif language == "हिन्दी":
