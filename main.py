@@ -195,10 +195,4 @@ def main():
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
 
 # Close SQLite connection
-@st.cache(hash_funcs={sqlite3.Connection: id})
-def get_connection():
-    return sqlite3.connect("railwaydb.db", check_same_thread=False)
-
 conn.close()
-
-``
