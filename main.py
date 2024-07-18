@@ -2,38 +2,37 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
-# Establish SQLite connection
 conn = sqlite3.connect('railwaydb')
 c = conn.cursor()
 
-# Function to create database tables if they do not exist
+
 def create_db():
     c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
     c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
     c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
     conn.commit()
 
-# Function to add a new train destination
+
 def add_train_destination(train_name, train_number, start_destination, end_destination):
     c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
     conn.commit()
     create_seat_table(train_number)
 
-# Function to create seat table for a train
+
 def create_seat_table(train_number):
     c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
     conn.commit()
     insert_seats(train_number)
 
-# Function to insert seats into a seat table
+
 def insert_seats(train_number):
-    for i in range(1, 201):  # Assuming there are 200 seats per train
+    for i in range(1, 201): 
         val = categorize_seat(i)
         parameters = (i, val, 0, '', '', '')
         c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
     conn.commit()
 
-# Function to categorize seat types
+
 def categorize_seat(seat_number):
     if seat_number % 10 in [0, 4, 5, 9]:
         return "window"
@@ -42,7 +41,7 @@ def categorize_seat(seat_number):
     else:
         return "middle"
 
-# Function to view seats for a given train
+
 def view_seat(train_number):
     try:
         seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM seats_{train_number} ORDER BY seat_number ASC")
@@ -55,7 +54,7 @@ def view_seat(train_number):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-# Function to book tickets for a given train
+
 def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
         seat_number = allocate_seat(train_number, seat_type)
@@ -68,7 +67,6 @@ def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, 
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-# Function to allocate a seat for booking
 def allocate_seat(train_number, seat_type):
     try:
         seat_query = c.execute(f"SELECT seat_number FROM seats_{train_number} WHERE booked=0 AND seat_type=? ORDER BY seat_number ASC LIMIT 1", (seat_type,))
@@ -78,7 +76,7 @@ def allocate_seat(train_number, seat_type):
         st.error(f"SQLite error: {e}")
         return None
 
-# Function to cancel a train and associated seats
+
 def cancel_train(train_number):
     try:
         train_data = search_train(train_number, '')
@@ -93,7 +91,7 @@ def cancel_train(train_number):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-# Function to delete a train and associated seats
+
 def delete_train(train_number):
     try:
         train_data = search_train(train_number, '')
@@ -108,7 +106,7 @@ def delete_train(train_number):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-# Function to search for a train by train number and optional train name
+
 def search_train(train_number, train_name):
     try:
         train_query = c.execute("SELECT * FROM trains WHERE train_no=? AND train_name=?", (train_number, train_name))
@@ -118,7 +116,6 @@ def search_train(train_number, train_name):
         st.error(f"SQLite error: {e}")
         return None
 
-# Main function to run the Streamlit app
 def main():
     st.sidebar.title("Operations")
     language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"])
@@ -194,5 +191,5 @@ def main():
             else:
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
 
-# Close SQLite connection
+
 conn.close()
