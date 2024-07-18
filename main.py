@@ -1,7 +1,7 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
-import speech_recognition as sr  # Importing Speech Recognition library
+
 
 # Establish SQLite connection
 conn = sqlite3.connect('railwaydb')
@@ -120,36 +120,12 @@ def search_train(train_number, train_name):
         return None
 
 # Function for speech recognition
-def recognize_speech():
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("Speak now...")
-        audio = r.listen(source)
 
-    try:
-        spoken_text = r.recognize_google(audio)
-        return spoken_text.lower()
-    except sr.UnknownValueError:
-        st.warning("Could not understand audio.")
-        return None
-    except sr.RequestError:
-        st.error("Speech recognition service unavailable.")
-        return None
 
 # Main function to run the Streamlit app
 def main():
-    st.info("Click the button or speak 'English' or 'Hindi'")
-    spoken_language = recognize_speech()
-    if spoken_language:
-        if "english" in spoken_language:
-            language = "English"
-        elif "hindi" in spoken_language or "हिंदी" in spoken_language:
-            language = "हिन्दी"
-        else:
-            st.warning("Unsupported language. Defaulting to English.")
-            language = "English"
-    else:
-        language = "English"
+    st.info("Click the button  'English' or 'Hindi'")
+  
 
     if language == "English":
         st.title("Railway Management System")
