@@ -2,7 +2,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
-
 # Establish SQLite connection
 conn = sqlite3.connect('railwaydb')
 c = conn.cursor()
@@ -119,26 +118,24 @@ def search_train(train_number, train_name):
         st.error(f"SQLite error: {e}")
         return None
 
-# Function for speech recognition
-
-
 # Main function to run the Streamlit app
 def main():
-    st.info("Click the button  'English' or 'Hindi'")
-  
+    st.title("Railway Management System")
 
+    # Language selection
+    language = st.radio("Choose Language", ["English", "हिन्दी"])
+
+    # Set title based on language selection
     if language == "English":
-        st.title("Railway Management System")
         st.header("Options")
         options = [
-            "Create Database", "Add Train Destination", "Cancel Train",
+            "Create Database", "Add Train Destination", "Cancel Train", 
             "Delete Train", "View Seats", "Book Tickets", "Search Train"
         ]
     elif language == "हिन्दी":
-        st.title("रेलवे प्रबंधन प्रणाली")
         st.header("विकल्प")
         options = [
-            "डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें",
+            "डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें", 
             "ट्रेन हटाएं", "सीटें देखें", "टिकट बुक करें", "ट्रेन खोजें"
         ]
 
