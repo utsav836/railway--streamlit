@@ -107,69 +107,60 @@ def search_train(train_number, train_name):
         return None
 
 def main():
+    st.title("Railway Management System")
+    st.markdown('<div style="text-align: center; font-size: 24px;">Operations</div>', unsafe_allow_html=True)
+
     st.sidebar.title("Operations")
-    language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"], key='language_select')
+    operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
 
-    if language == "English":
-        st.title("Railway Management System")
-        st.markdown('<div style="text-align: center; font-size: 24px;">Operations</div>', unsafe_allow_html=True)
-    elif language == "हिन्दी":
-        st.title("रेलवे प्रबंधन प्रणाली")
-        st.markdown('<div style="text-align: center; font-size: 24px;">कार्रवाई</div>', unsafe_allow_html=True)
-
-    if st.sidebar.button("Perform Operation / कार्य पूरा करें"):
-        if language == "English":
-            operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
-        elif language == "हिन्दी":
-            operation = st.sidebar.selectbox("ऑपरेशन चुनें", ["डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें", "ट्रेन हटाएं", "सीटें देखें", "टिकट बुक करें", "ट्रेन खोजें"])
-
-        if operation == "Create Database" or operation == "डेटाबेस बनाएं":
+    if st.sidebar.button("Perform Operation"):
+        if operation == "Create Database":
             create_db()
-          
+            st.sidebar.success("Database created successfully.")
 
-        elif operation == "Add Train Destination" or operation == "ट्रेन डेस्टिनेशन जोड़ें":
-            train_name = st.sidebar.text_input("Train Name / ट्रेन का नाम")
-            train_number = st.sidebar.text_input("Train Number / ट्रेन नंबर")
-            start_destination = st.sidebar.text_input("Start Destination / प्रारंभिक स्थान")
-            end_destination = st.sidebar.text_input("End Destination / अंतिम स्थान")
+        elif operation == "Add Train Destination":
+            train_name = st.sidebar.text_input("Train Name")
+            train_number = st.sidebar.text_input("Train Number")
+            start_destination = st.sidebar.text_input("Start Destination")
+            end_destination = st.sidebar.text_input("End Destination")
 
             add_train_destination(train_name, train_number, start_destination, end_destination)
-            st.sidebar.success(f"Train added successfully / ट्रेन सफलतापूर्वक जोड़ी गई: {train_name}, Train Number / ट्रेन नंबर: {train_number}, From / से: {start_destination}, To / तक: {end_destination}")
+            st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
 
-        elif operation == "Cancel Train" or operation == "ट्रेन रद्द करें":
-            train_number = st.sidebar.text_input("Train Number to Cancel / रद्द करने के लिए ट्रेन नंबर")
+        elif operation == "Cancel Train":
+            train_number = st.sidebar.text_input("Train Number to Cancel")
 
             cancel_train(train_number)
 
-        elif operation == "Delete Train" or operation == "ट्रेन हटाएं":
-            train_number = st.sidebar.text_input("Train Number to Delete / हटाने के लिए ट्रेन नंबर")
+        elif operation == "Delete Train":
+            train_number = st.sidebar.text_input("Train Number to Delete")
 
             delete_train(train_number)
 
-        elif operation == "View Seats" or operation == "सीटें देखें":
-            train_number = st.sidebar.text_input("Enter Train Number to View Seats / सीटें देखने के लिए ट्रेन नंबर दर्ज करें")
+        elif operation == "View Seats":
+            train_number = st.sidebar.text_input("Enter Train Number to View Seats")
 
             view_seat(train_number)
 
-        elif operation == "Book Tickets" or operation == "टिकट बुक करें":
-            train_number = st.sidebar.text_input("Enter Train Number to Book Tickets / टिकट बुक करने के लिए ट्रेन नंबर दर्ज करें")
-            passenger_name = st.sidebar.text_input("Passenger Name / यात्री का नाम")
-            passenger_age = st.sidebar.text_input("Passenger Age / यात्री की आयु")
-            passenger_gender = st.sidebar.selectbox("Passenger Gender / यात्री का लिंग", ["Male / पुरुष", "Female / महिला", "Other / अन्य"])
-            seat_type = st.sidebar.selectbox("Seat Type / सीट का प्रकार", ["window / खिड़की", "aisle / गलियारा", "middle / मध्य"])
+        elif operation == "Book Tickets":
+            train_number = st.sidebar.text_input("Enter Train Number to Book Tickets")
+            passenger_name = st.sidebar.text_input("Passenger Name")
+            passenger_age = st.sidebar.text_input("Passenger Age")
+            passenger_gender = st.sidebar.selectbox("Passenger Gender", ["Male", "Female", "Other"])
+            seat_type = st.sidebar.selectbox("Seat Type", ["window", "aisle", "middle"])
 
             book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
 
-        elif operation == "Search Train" or operation == "ट्रेन खोजें":
-            train_number = st.sidebar.text_input("Enter Train Number to Search / खोज के लिए ट्रेन नंबर दर्ज करें")
-            train_name = st.sidebar.text_input("Enter Train Name (optional) / ट्रेन का नाम दर्ज करें (ऐच्छिक)")
+        elif operation == "Search Train":
+            train_number = st.sidebar.text_input("Enter Train Number to Search")
+            train_name = st.sidebar.text_input("Enter Train Name (optional)")
 
             train_data = search_train(train_number, train_name)
             if train_data:
-                st.sidebar.success(f"Train found / ट्रेन मिली: {train_data}")
+                st.sidebar.success(f"Train found: {train_data}")
             else:
-                st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
-        st.sidebar.success("Database created successfully / डेटाबेस सफलतापूर्वक बनाया गया.")
+                st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found.")
+
     conn.close()
 
 if __name__ == "__main__":
