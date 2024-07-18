@@ -6,27 +6,41 @@ conn = sqlite3.connect('railwaydb')
 c = conn.cursor()
 
 def create_db():
-    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
-    conn.commit()
+    try:
+        c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
+        c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
+        c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
+        conn.commit()
+        st.sidebar.success("Database created successfully.")
+    except sqlite3.Error as e:
+        st.sidebar.error(f"SQLite error: {e}")
 
 def add_train_destination(train_name, train_number, start_destination, end_destination):
-    c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
-    conn.commit()
-    create_seat_table(train_number)
+    try:
+        c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
+        conn.commit()
+        create_seat_table(train_number)
+        st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
+    except sqlite3.Error as e:
+        st.sidebar.error(f"SQLite error: {e}")
 
 def create_seat_table(train_number):
-    c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
-    conn.commit()
-    insert_seats(train_number)
+    try:
+        c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
+        conn.commit()
+        insert_seats(train_number)
+    except sqlite3.Error as e:
+        st.sidebar.error(f"SQLite error: {e}")
 
 def insert_seats(train_number):
-    for i in range(1, 201): 
-        val = categorize_seat(i)
-        parameters = (i, val, 0, '', '', '')
-        c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
-    conn.commit()
+    try:
+        for i in range(1, 201): 
+            val = categorize_seat(i)
+            parameters = (i, val, 0, '', '', '')
+            c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
+        conn.commit()
+    except sqlite3.Error as e:
+        st.sidebar.error(f"SQLite error: {e}")
 
 def categorize_seat(seat_number):
     if seat_number % 10 in [0, 4, 5, 9]:
@@ -116,7 +130,6 @@ def main():
     if st.sidebar.button("Perform Operation"):
         if operation == "Create Database":
             create_db()
-            st.sidebar.success("Database created successfully.")
 
         elif operation == "Add Train Destination":
             train_name = st.sidebar.text_input("Train Name")
@@ -125,7 +138,6 @@ def main():
             end_destination = st.sidebar.text_input("End Destination")
 
             add_train_destination(train_name, train_number, start_destination, end_destination)
-            st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
 
         elif operation == "Cancel Train":
             train_number = st.sidebar.text_input("Train Number to Cancel")
