@@ -112,15 +112,17 @@ def main():
 
     if language == "English":
         st.title("Railway Management System")
+        st.markdown('<div style="text-align: center; font-size: 24px;">Operations</div>', unsafe_allow_html=True)
     elif language == "हिन्दी":
         st.title("रेलवे प्रबंधन प्रणाली")
-
-    if language == "English":
-        operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
-    elif language == "हिन्दी":
-        operation = st.sidebar.selectbox("ऑपरेशन चुनें", ["डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें", "ट्रेन हटाएं", "सीटें देखें", "टिकट बुक करें", "ट्रेन खोजें"])
+        st.markdown('<div style="text-align: center; font-size: 24px;">कार्रवाई</div>', unsafe_allow_html=True)
 
     if st.sidebar.button("Perform Operation / कार्य पूरा करें"):
+        if language == "English":
+            operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
+        elif language == "हिन्दी":
+            operation = st.sidebar.selectbox("ऑपरेशन चुनें", ["डेटाबेस बनाएं", "ट्रेन डेस्टिनेशन जोड़ें", "ट्रेन रद्द करें", "ट्रेन हटाएं", "सीटें देखें", "टिकट बुक करें", "ट्रेन खोजें"])
+
         if operation == "Create Database" or operation == "डेटाबेस बनाएं":
             create_db()
             st.sidebar.success("Database created successfully / डेटाबेस सफलतापूर्वक बनाया गया.")
@@ -168,26 +170,7 @@ def main():
             else:
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found / नाम के साथ ट्रेन {train_number} नहीं मिली.")
 
-    # Center aligning operations
-    st.markdown(
-        """
-        <style>
-        .center {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-size: 24px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown('<div class="center">Operations</div>', unsafe_allow_html=True)
-
-    # Add operation specific content here if needed
+    conn.close()
 
 if __name__ == "__main__":
     main()
-    conn.close()
