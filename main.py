@@ -2,7 +2,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
-# Initialize the SQLite connection
 conn = sqlite3.connect('railwaydb.db', check_same_thread=False)
 c = conn.cursor()
 
@@ -132,10 +131,7 @@ def allocate_seat_manual(train_number, seat_number, passenger_name, passenger_ag
 def main():
     st.title("Railway Management System")
     
-    # Language selection (if needed)
-    # You can implement language selection logic here if you have multiple languages
-    
-    # Operations selection
+  
     operation = st.selectbox(
         "Choose Operation",
         [
