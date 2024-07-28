@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 
 # Initialize the SQLite connection
-conn = sqlite3.connect('railwaydb')
+conn = sqlite3.connect('railwaydb', check_same_thread=False)
 c = conn.cursor()
 
 # Language dictionaries
@@ -53,27 +53,42 @@ texts = {
 }
 
 def create_db():
-    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
-    conn.commit()
+    try:
+        c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
+        c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
+        c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT PRIMARY KEY, train_name TEXT, start_destination TEXT, end_destination TEXT)")
+        conn.commit()
+        st.success(texts[st.session_state.language]["database_created"])
+    except sqlite3.Error as e:
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def add_train_destination(train_name, train_number, start_destination, end_destination):
-    c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
-    conn.commit()
-    create_seat_table(train_number)
+    try:
+        c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)",
+                  (train_number, train_name, start_destination, end_destination))
+        conn.commit()
+        create_seat_table(train_number)
+        st.success(texts[st.session_state.language]["train_added_success"])
+    except sqlite3.Error as e:
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def create_seat_table(train_number):
-    c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
-    conn.commit()
-    insert_seats(train_number)
+    try:
+        c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
+        conn.commit()
+        insert_seats(train_number)
+    except sqlite3.Error as e:
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def insert_seats(train_number):
-    for i in range(1, 201): 
-        val = categorize_seat(i)
-        parameters = (i, val, 0, '', '', '')
-        c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
-    conn.commit()
+    try:
+        for i in range(1, 201):
+            val = categorize_seat(i)
+            parameters = (i, val, 0, '', '', '')
+            c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
+        conn.commit()
+    except sqlite3.Error as e:
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def categorize_seat(seat_number):
     if seat_number % 10 in [0, 4, 5, 9]:
@@ -158,15 +173,17 @@ def main():
         st.session_state.language = "English"
     
     # Language selection
-    if st.session_state.language == "English":
-        st.sidebar.title("Select Language")
-        language = st.sidebar.selectbox("Select Language", ["English", "हिन्दी"], key='language_select')
-        st.session_state.language = language
-
+    if 'language' not in st.session_state:
+        st.session_state.language = "English"
+    
+    language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"], key='language_select')
+    st.session_state.language = language
+    
     # Display application title and operations
     st.title(texts[st.session_state.language]["title"])
     st.markdown(f'<div style="text-align: center; font-size: 24px;">{texts[st.session_state.language]["operations"]}</div>', unsafe_allow_html=True)
     
+    # Operations selection
     operation = st.selectbox(
         texts[st.session_state.language]["operations"],
         [
@@ -179,58 +196,62 @@ def main():
             texts[st.session_state.language]["search_train"]
         ]
     )
-
+    
     if operation == texts[st.session_state.language]["create_db"]:
         create_db()
-        st.success(texts[st.session_state.language]["database_created"])
+    
     elif operation == texts[st.session_state.language]["add_train"]:
         with st.form(key='add_train_form'):
-            train_name = st.text_input(texts[st.session_state.language]["add_train"], key='train_name')
-            train_number = st.text_input("Train Number", key='train_number')
-            start_destination = st.text_input("Start Destination", key='start_destination')
-            end_destination = st.text_input("End Destination", key='end_destination')
-            submit_button = st.form_submit_button(label='Add Train')
+            train_name = st.text_input("Train Name / ट्रेन का नाम", key='train_name')
+            train_number = st.text_input("Train Number / ट्रेन नंबर", key='train_number')
+            start_destination = st.text_input("Start Destination / प्रारंभिक स्थान", key='start_destination')
+            end_destination = st.text_input("End Destination / अंतिम स्थान", key='end_destination')
+            submit_button = st.form_submit_button(label=texts[st.session_state.language]["add_train"])
 
             if submit_button:
                 add_train_destination(train_name, train_number, start_destination, end_destination)
-                st.success(texts[st.session_state.language]["train_added_success"])
+    
     elif operation == texts[st.session_state.language]["cancel_train"]:
         with st.form(key='cancel_train_form'):
-            train_number = st.text_input("Train Number", key='cancel_train_number')
-            submit_button = st.form_submit_button(label='Cancel Train')
+            train_number = st.text_input("Train Number to Cancel / रद्द करने के लिए ट्रेन नंबर", key='cancel_train_number')
+            submit_button = st.form_submit_button(label=texts[st.session_state.language]["cancel_train"])
 
             if submit_button:
                 cancel_train(train_number)
+    
     elif operation == texts[st.session_state.language]["delete_train"]:
         with st.form(key='delete_train_form'):
-            train_number = st.text_input("Train Number", key='delete_train_number')
-            submit_button = st.form_submit_button(label='Delete Train')
+            train_number = st.text_input("Train Number to Delete / हटाने के लिए ट्रेन नंबर", key='delete_train_number')
+            submit_button = st.form_submit_button(label=texts[st.session_state.language]["delete_train"])
 
             if submit_button:
                 delete_train(train_number)
+    
     elif operation == texts[st.session_state.language]["view_seats"]:
         with st.form(key='view_seats_form'):
-            train_number = st.text_input("Train Number", key='view_seat_number')
-            submit_button = st.form_submit_button(label='View Seats')
+            train_number = st.text_input("Enter Train Number to View Seats / सीटें देखने के लिए ट्रेन नंबर दर्ज करें", key='view_seat_number')
+            submit_button = st.form_submit_button(label=texts[st.session_state.language]["view_seats"])
 
             if submit_button:
                 view_seat(train_number)
+    
     elif operation == texts[st.session_state.language]["book_tickets"]:
         with st.form(key='book_tickets_form'):
-            train_number = st.text_input("Train Number", key='book_ticket_number')
-            passenger_name = st.text_input("Passenger Name", key='passenger_name')
-            passenger_age = st.text_input("Passenger Age", key='passenger_age')
-            passenger_gender = st.selectbox("Passenger Gender", ["Male", "Female", "Other"], key='passenger_gender')
-            seat_type = st.selectbox("Seat Type", ["window", "aisle", "middle"], key='seat_type')
-            submit_button = st.form_submit_button(label='Book Ticket')
+            train_number = st.text_input("Enter Train Number to Book Tickets / टिकट बुक करने के लिए ट्रेन नंबर दर्ज करें", key='book_ticket_number')
+            passenger_name = st.text_input("Passenger Name / यात्री का नाम", key='passenger_name')
+            passenger_age = st.text_input("Passenger Age / यात्री की आयु", key='passenger_age')
+            passenger_gender = st.selectbox("Passenger Gender / यात्री का लिंग", ["Male / पुरुष", "Female / महिला", "Other / अन्य"], key='passenger_gender')
+            seat_type = st.selectbox("Seat Type / सीट का प्रकार", ["window / खिड़की", "aisle / गलियारा", "middle / मध्य"], key='seat_type')
+            submit_button = st.form_submit_button(label=texts[st.session_state.language]["book_tickets"])
 
             if submit_button:
                 book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+    
     elif operation == texts[st.session_state.language]["search_train"]:
         with st.form(key='search_train_form'):
-            train_number = st.text_input("Train Number", key='search_train_number')
-            train_name = st.text_input("Train Name", key='search_train_name')
-            submit_button = st.form_submit_button(label='Search Train')
+            train_number = st.text_input("Enter Train Number to Search / खोज के लिए ट्रेन नंबर दर्ज करें", key='search_train_number')
+            train_name = st.text_input("Enter Train Name (optional) / ट्रेन का नाम दर्ज करें (ऐच्छिक)", key='search_train_name')
+            submit_button = st.form_submit_button(label=texts[st.session_state.language]["search_train"])
 
             if submit_button:
                 train_data = search_train(train_number, train_name)
