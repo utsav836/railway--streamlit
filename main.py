@@ -169,96 +169,96 @@ def search_train(train_number, train_name):
         return None
 
 def main():
+    # Language selection screen
     if 'language' not in st.session_state:
         st.session_state.language = "English"
-    
-    # Language selection
-    if 'language' not in st.session_state:
-        st.session_state.language = "English"
-    
-    language = st.sidebar.selectbox("Select Language / भाषा चुनें", ["English", "हिन्दी"], key='language_select')
-    st.session_state.language = language
-    
-    # Display application title and operations
-    st.title(texts[st.session_state.language]["title"])
-    st.markdown(f'<div style="text-align: center; font-size: 24px;">{texts[st.session_state.language]["operations"]}</div>', unsafe_allow_html=True)
-    
-    # Operations selection
-    operation = st.selectbox(
-        texts[st.session_state.language]["operations"],
-        [
-            texts[st.session_state.language]["create_db"],
-            texts[st.session_state.language]["add_train"],
-            texts[st.session_state.language]["cancel_train"],
-            texts[st.session_state.language]["delete_train"],
-            texts[st.session_state.language]["view_seats"],
-            texts[st.session_state.language]["book_tickets"],
-            texts[st.session_state.language]["search_train"]
-        ]
-    )
-    
-    if operation == texts[st.session_state.language]["create_db"]:
-        create_db()
-    
-    elif operation == texts[st.session_state.language]["add_train"]:
-        with st.form(key='add_train_form'):
-            train_name = st.text_input("Train Name / ट्रेन का नाम", key='train_name')
-            train_number = st.text_input("Train Number / ट्रेन नंबर", key='train_number')
-            start_destination = st.text_input("Start Destination / प्रारंभिक स्थान", key='start_destination')
-            end_destination = st.text_input("End Destination / अंतिम स्थान", key='end_destination')
-            submit_button = st.form_submit_button(label=texts[st.session_state.language]["add_train"])
 
-            if submit_button:
-                add_train_destination(train_name, train_number, start_destination, end_destination)
-    
-    elif operation == texts[st.session_state.language]["cancel_train"]:
-        with st.form(key='cancel_train_form'):
-            train_number = st.text_input("Train Number to Cancel / रद्द करने के लिए ट्रेन नंबर", key='cancel_train_number')
-            submit_button = st.form_submit_button(label=texts[st.session_state.language]["cancel_train"])
+    if 'language' not in st.session_state or st.session_state.language == "":
+        st.title("Select Language / भाषा चुनें")
+        lang = st.selectbox("Choose Language / भाषा चुनें", ["English", "हिन्दी"])
+        if st.button("Submit"):
+            st.session_state.language = lang
+            st.experimental_rerun()
+    else:
+        st.title(texts[st.session_state.language]["title"])
+        st.markdown(f'<div style="text-align: center; font-size: 24px;">{texts[st.session_state.language]["operations"]}</div>', unsafe_allow_html=True)
+        
+        # Operations selection
+        operation = st.selectbox(
+            texts[st.session_state.language]["operations"],
+            [
+                texts[st.session_state.language]["create_db"],
+                texts[st.session_state.language]["add_train"],
+                texts[st.session_state.language]["cancel_train"],
+                texts[st.session_state.language]["delete_train"],
+                texts[st.session_state.language]["view_seats"],
+                texts[st.session_state.language]["book_tickets"],
+                texts[st.session_state.language]["search_train"]
+            ]
+        )
+        
+        if operation == texts[st.session_state.language]["create_db"]:
+            create_db()
+        
+        elif operation == texts[st.session_state.language]["add_train"]:
+            with st.form(key='add_train_form'):
+                train_name = st.text_input("Train Name / ट्रेन का नाम", key='train_name')
+                train_number = st.text_input("Train Number / ट्रेन नंबर", key='train_number')
+                start_destination = st.text_input("Start Destination / प्रारंभिक स्थान", key='start_destination')
+                end_destination = st.text_input("End Destination / अंतिम स्थान", key='end_destination')
+                submit_button = st.form_submit_button(label=texts[st.session_state.language]["add_train"])
 
-            if submit_button:
-                cancel_train(train_number)
-    
-    elif operation == texts[st.session_state.language]["delete_train"]:
-        with st.form(key='delete_train_form'):
-            train_number = st.text_input("Train Number to Delete / हटाने के लिए ट्रेन नंबर", key='delete_train_number')
-            submit_button = st.form_submit_button(label=texts[st.session_state.language]["delete_train"])
+                if submit_button:
+                    add_train_destination(train_name, train_number, start_destination, end_destination)
+        
+        elif operation == texts[st.session_state.language]["cancel_train"]:
+            with st.form(key='cancel_train_form'):
+                train_number = st.text_input("Train Number to Cancel / रद्द करने के लिए ट्रेन नंबर", key='cancel_train_number')
+                submit_button = st.form_submit_button(label=texts[st.session_state.language]["cancel_train"])
 
-            if submit_button:
-                delete_train(train_number)
-    
-    elif operation == texts[st.session_state.language]["view_seats"]:
-        with st.form(key='view_seats_form'):
-            train_number = st.text_input("Enter Train Number to View Seats / सीटें देखने के लिए ट्रेन नंबर दर्ज करें", key='view_seat_number')
-            submit_button = st.form_submit_button(label=texts[st.session_state.language]["view_seats"])
+                if submit_button:
+                    cancel_train(train_number)
+        
+        elif operation == texts[st.session_state.language]["delete_train"]:
+            with st.form(key='delete_train_form'):
+                train_number = st.text_input("Train Number to Delete / हटाने के लिए ट्रेन नंबर", key='delete_train_number')
+                submit_button = st.form_submit_button(label=texts[st.session_state.language]["delete_train"])
 
-            if submit_button:
-                view_seat(train_number)
-    
-    elif operation == texts[st.session_state.language]["book_tickets"]:
-        with st.form(key='book_tickets_form'):
-            train_number = st.text_input("Enter Train Number to Book Tickets / टिकट बुक करने के लिए ट्रेन नंबर दर्ज करें", key='book_ticket_number')
-            passenger_name = st.text_input("Passenger Name / यात्री का नाम", key='passenger_name')
-            passenger_age = st.text_input("Passenger Age / यात्री की आयु", key='passenger_age')
-            passenger_gender = st.selectbox("Passenger Gender / यात्री का लिंग", ["Male / पुरुष", "Female / महिला", "Other / अन्य"], key='passenger_gender')
-            seat_type = st.selectbox("Seat Type / सीट का प्रकार", ["window / खिड़की", "aisle / गलियारा", "middle / मध्य"], key='seat_type')
-            submit_button = st.form_submit_button(label=texts[st.session_state.language]["book_tickets"])
+                if submit_button:
+                    delete_train(train_number)
+        
+        elif operation == texts[st.session_state.language]["view_seats"]:
+            with st.form(key='view_seats_form'):
+                train_number = st.text_input("Enter Train Number to View Seats / सीटें देखने के लिए ट्रेन नंबर दर्ज करें", key='view_seat_number')
+                submit_button = st.form_submit_button(label=texts[st.session_state.language]["view_seats"])
 
-            if submit_button:
-                book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
-    
-    elif operation == texts[st.session_state.language]["search_train"]:
-        with st.form(key='search_train_form'):
-            train_number = st.text_input("Enter Train Number to Search / खोज के लिए ट्रेन नंबर दर्ज करें", key='search_train_number')
-            train_name = st.text_input("Enter Train Name (optional) / ट्रेन का नाम दर्ज करें (ऐच्छिक)", key='search_train_name')
-            submit_button = st.form_submit_button(label=texts[st.session_state.language]["search_train"])
+                if submit_button:
+                    view_seat(train_number)
+        
+        elif operation == texts[st.session_state.language]["book_tickets"]:
+            with st.form(key='book_tickets_form'):
+                train_number = st.text_input("Enter Train Number to Book Tickets / टिकट बुक करने के लिए ट्रेन नंबर दर्ज करें", key='book_ticket_number')
+                passenger_name = st.text_input("Passenger Name / यात्री का नाम", key='passenger_name')
+                passenger_age = st.text_input("Passenger Age / यात्री की आयु", key='passenger_age')
+                passenger_gender = st.selectbox("Passenger Gender / यात्री का लिंग", ["Male / पुरुष", "Female / महिला", "Other / अन्य"], key='passenger_gender')
+                seat_type = st.selectbox("Seat Type / सीट का प्रकार", ["window / खिड़की", "aisle / गलियारा", "middle / मध्य"], key='seat_type')
+                submit_button = st.form_submit_button(label=texts[st.session_state.language]["book_tickets"])
 
-            if submit_button:
-                train_data = search_train(train_number, train_name)
-                if train_data:
-                    st.success(texts[st.session_state.language]["train_found"].format(train_data=train_data))
-                else:
-                    st.warning(texts[st.session_state.language]["train_not_found"].format(train_number=train_number, train_name=train_name))
+                if submit_button:
+                    book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+        
+        elif operation == texts[st.session_state.language]["search_train"]:
+            with st.form(key='search_train_form'):
+                train_number = st.text_input("Enter Train Number to Search / खोज के लिए ट्रेन नंबर दर्ज करें", key='search_train_number')
+                train_name = st.text_input("Enter Train Name (optional) / ट्रेन का नाम दर्ज करें (ऐच्छिक)", key='search_train_name')
+                submit_button = st.form_submit_button(label=texts[st.session_state.language]["search_train"])
+
+                if submit_button:
+                    train_data = search_train(train_number, train_name)
+                    if train_data:
+                        st.success(texts[st.session_state.language]["train_found"].format(train_data=train_data))
+                    else:
+                        st.warning(texts[st.session_state.language]["train_not_found"].format(train_number=train_number, train_name=train_name))
 
 if __name__ == "__main__":
     main()
