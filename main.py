@@ -22,6 +22,7 @@ texts = {
         "train_canceled_success": "Train {train_number} and associated seats have been canceled successfully.",
         "train_deleted_success": "Train {train_number} and associated seats have been deleted successfully.",
         "ticket_booked_success": "Ticket booked successfully.",
+        "ticket_not_booked": "Failed to book ticket. Please try again.",
         "train_found": "Train found: {train_data}",
         "train_not_found": "Train {train_number} with name '{train_name}' not found.",
         "database_created": "Database created successfully",
@@ -43,6 +44,7 @@ texts = {
         "train_canceled_success": "ट्रेन {train_number} और संबंधित सीटें सफलतापूर्वक रद्द कर दी गई हैं।",
         "train_deleted_success": "ट्रेन {train_number} और संबंधित सीटें सफलतापूर्वक हटा दी गई हैं।",
         "ticket_booked_success": "टिकट सफलतापूर्वक बुक किया गया।",
+        "ticket_not_booked": "टिकट बुक करने में विफल। कृपया फिर से प्रयास करें।",
         "train_found": "ट्रेन मिली: {train_data}",
         "train_not_found": "ट्रेन {train_number} नाम '{train_name}' के साथ नहीं मिली।",
         "database_created": "डेटाबेस सफलतापूर्वक बनाया गया",
@@ -169,11 +171,7 @@ def search_train(train_number, train_name):
         return None
 
 def main():
-    # Language selection screen
     if 'language' not in st.session_state:
-        st.session_state.language = "English"
-
-    if 'language' not in st.session_state or st.session_state.language == "":
         st.title("Select Language / भाषा चुनें")
         lang = st.selectbox("Choose Language / भाषा चुनें", ["English", "हिन्दी"])
         if st.button("Submit"):
