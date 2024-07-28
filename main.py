@@ -2,45 +2,78 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
+# Initialize the SQLite connection
 conn = sqlite3.connect('railwaydb')
 c = conn.cursor()
 
+# Language dictionaries
+texts = {
+    "English": {
+        "title": "Railway Management System",
+        "operations": "Operations",
+        "create_db": "Create Database",
+        "add_train": "Add Train Destination",
+        "cancel_train": "Cancel Train",
+        "delete_train": "Delete Train",
+        "view_seats": "View Seats",
+        "book_tickets": "Book Tickets",
+        "search_train": "Search Train",
+        "train_added_success": "Train added successfully",
+        "train_canceled_success": "Train {train_number} and associated seats have been canceled successfully.",
+        "train_deleted_success": "Train {train_number} and associated seats have been deleted successfully.",
+        "ticket_booked_success": "Ticket booked successfully.",
+        "train_found": "Train found: {train_data}",
+        "train_not_found": "Train {train_number} with name '{train_name}' not found.",
+        "database_created": "Database created successfully",
+        "no_seats_found": "No seats found for this train.",
+        "no_available_seats": "No available seats of this type.",
+        "sqlite_error": "SQLite error: {error}"
+    },
+    "हिन्दी": {
+        "title": "रेलवे प्रबंधन प्रणाली",
+        "operations": "कार्रवाई",
+        "create_db": "डेटाबेस बनाएं",
+        "add_train": "ट्रेन डेस्टिनेशन जोड़ें",
+        "cancel_train": "ट्रेन रद्द करें",
+        "delete_train": "ट्रेन हटाएं",
+        "view_seats": "सीटें देखें",
+        "book_tickets": "टिकट बुक करें",
+        "search_train": "ट्रेन खोजें",
+        "train_added_success": "ट्रेन सफलतापूर्वक जोड़ी गई",
+        "train_canceled_success": "ट्रेन {train_number} और संबंधित सीटें सफलतापूर्वक रद्द कर दी गई हैं।",
+        "train_deleted_success": "ट्रेन {train_number} और संबंधित सीटें सफलतापूर्वक हटा दी गई हैं।",
+        "ticket_booked_success": "टिकट सफलतापूर्वक बुक किया गया।",
+        "train_found": "ट्रेन मिली: {train_data}",
+        "train_not_found": "ट्रेन {train_number} नाम '{train_name}' के साथ नहीं मिली।",
+        "database_created": "डेटाबेस सफलतापूर्वक बनाया गया",
+        "no_seats_found": "इस ट्रेन के लिए कोई सीटें नहीं मिलीं।",
+        "no_available_seats": "इस प्रकार की कोई उपलब्ध सीटें नहीं हैं।",
+        "sqlite_error": "SQLite त्रुटि: {error}"
+    }
+}
+
 def create_db():
-    try:
-        c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
-        c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
-        c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
-        conn.commit()
-        st.sidebar.success("Database created successfully.")
-    except sqlite3.Error as e:
-        st.sidebar.error(f"SQLite error: {e}")
+    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
+    conn.commit()
 
 def add_train_destination(train_name, train_number, start_destination, end_destination):
-    try:
-        c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
-        conn.commit()
-        create_seat_table(train_number)
-        st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
-    except sqlite3.Error as e:
-        st.sidebar.error(f"SQLite error: {e}")
+    c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
+    conn.commit()
+    create_seat_table(train_number)
 
 def create_seat_table(train_number):
-    try:
-        c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
-        conn.commit()
-        insert_seats(train_number)
-    except sqlite3.Error as e:
-        st.sidebar.error(f"SQLite error: {e}")
+    c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
+    conn.commit()
+    insert_seats(train_number)
 
 def insert_seats(train_number):
-    try:
-        for i in range(1, 201): 
-            val = categorize_seat(i)
-            parameters = (i, val, 0, '', '', '')
-            c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
-        conn.commit()
-    except sqlite3.Error as e:
-        st.sidebar.error(f"SQLite error: {e}")
+    for i in range(1, 201): 
+        val = categorize_seat(i)
+        parameters = (i, val, 0, '', '', '')
+        c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
+    conn.commit()
 
 def categorize_seat(seat_number):
     if seat_number % 10 in [0, 4, 5, 9]:
@@ -58,9 +91,9 @@ def view_seat(train_number):
             df = pd.DataFrame(result, columns=['Seat Number', 'Seat Type', 'Booked', 'Passenger Name', 'Passenger Age', 'Passenger Gender'])
             st.dataframe(df.style.set_properties(**{'text-align': 'center'}))  # Center align DataFrame
         else:
-            st.info("No seats found for this train.")
+            st.info(texts[st.session_state.language]["no_seats_found"])
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
@@ -68,11 +101,11 @@ def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, 
         if seat_number:
             c.execute(f"UPDATE seats_{train_number} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", (passenger_name, passenger_age, passenger_gender, seat_number))
             conn.commit()
-            st.success("Ticket booked successfully.")
+            st.success(texts[st.session_state.language]["ticket_booked_success"])
         else:
-            st.warning("No available seats of this type.")
+            st.warning(texts[st.session_state.language]["no_available_seats"])
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def allocate_seat(train_number, seat_type):
     try:
@@ -80,7 +113,7 @@ def allocate_seat(train_number, seat_type):
         result = seat_query.fetchone()
         return result[0] if result else None
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
         return None
 
 def cancel_train(train_number):
@@ -91,11 +124,11 @@ def cancel_train(train_number):
             conn.commit()
             c.execute(f"DROP TABLE IF EXISTS seats_{train_number}")
             conn.commit()
-            st.success(f"Train {train_number} and associated seats have been canceled successfully.")
+            st.success(texts[st.session_state.language]["train_canceled_success"].format(train_number=train_number))
         else:
-            st.warning(f"Train {train_number} does not exist.")
+            st.warning(texts[st.session_state.language]["train_not_found"].format(train_number=train_number, train_name=''))
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def delete_train(train_number):
     try:
@@ -105,11 +138,11 @@ def delete_train(train_number):
             conn.commit()
             c.execute(f"DROP TABLE IF EXISTS seats_{train_number}")
             conn.commit()
-            st.success(f"Train {train_number} and associated seats have been deleted successfully.")
+            st.success(texts[st.session_state.language]["train_deleted_success"].format(train_number=train_number))
         else:
-            st.warning(f"Train {train_number} does not exist.")
+            st.warning(texts[st.session_state.language]["train_not_found"].format(train_number=train_number, train_name=''))
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
 
 def search_train(train_number, train_name):
     try:
@@ -117,63 +150,94 @@ def search_train(train_number, train_name):
         train_data = train_query.fetchone()
         return train_data
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(texts[st.session_state.language]["sqlite_error"].format(error=e))
         return None
 
 def main():
-    st.title("Railway Management System")
-    st.markdown('<div style="text-align: center; font-size: 24px;">Operations</div>', unsafe_allow_html=True)
+    if 'language' not in st.session_state:
+        st.session_state.language = "English"
+    
+    # Language selection
+    if st.session_state.language == "English":
+        st.sidebar.title("Select Language")
+        language = st.sidebar.selectbox("Select Language", ["English", "हिन्दी"], key='language_select')
+        st.session_state.language = language
 
-    st.sidebar.title("Operations")
-    operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
+    # Display application title and operations
+    st.title(texts[st.session_state.language]["title"])
+    st.markdown(f'<div style="text-align: center; font-size: 24px;">{texts[st.session_state.language]["operations"]}</div>', unsafe_allow_html=True)
+    
+    operation = st.selectbox(
+        texts[st.session_state.language]["operations"],
+        [
+            texts[st.session_state.language]["create_db"],
+            texts[st.session_state.language]["add_train"],
+            texts[st.session_state.language]["cancel_train"],
+            texts[st.session_state.language]["delete_train"],
+            texts[st.session_state.language]["view_seats"],
+            texts[st.session_state.language]["book_tickets"],
+            texts[st.session_state.language]["search_train"]
+        ]
+    )
 
-    if st.sidebar.button("Perform Operation"):
-        if operation == "Create Database":
-            create_db()
+    if operation == texts[st.session_state.language]["create_db"]:
+        create_db()
+        st.success(texts[st.session_state.language]["database_created"])
+    elif operation == texts[st.session_state.language]["add_train"]:
+        with st.form(key='add_train_form'):
+            train_name = st.text_input(texts[st.session_state.language]["add_train"], key='train_name')
+            train_number = st.text_input("Train Number", key='train_number')
+            start_destination = st.text_input("Start Destination", key='start_destination')
+            end_destination = st.text_input("End Destination", key='end_destination')
+            submit_button = st.form_submit_button(label='Add Train')
 
-        elif operation == "Add Train Destination":
-            train_name = st.sidebar.text_input("Train Name")
-            train_number = st.sidebar.text_input("Train Number")
-            start_destination = st.sidebar.text_input("Start Destination")
-            end_destination = st.sidebar.text_input("End Destination")
+            if submit_button:
+                add_train_destination(train_name, train_number, start_destination, end_destination)
+                st.success(texts[st.session_state.language]["train_added_success"])
+    elif operation == texts[st.session_state.language]["cancel_train"]:
+        with st.form(key='cancel_train_form'):
+            train_number = st.text_input("Train Number", key='cancel_train_number')
+            submit_button = st.form_submit_button(label='Cancel Train')
 
-            add_train_destination(train_name, train_number, start_destination, end_destination)
+            if submit_button:
+                cancel_train(train_number)
+    elif operation == texts[st.session_state.language]["delete_train"]:
+        with st.form(key='delete_train_form'):
+            train_number = st.text_input("Train Number", key='delete_train_number')
+            submit_button = st.form_submit_button(label='Delete Train')
 
-        elif operation == "Cancel Train":
-            train_number = st.sidebar.text_input("Train Number to Cancel")
+            if submit_button:
+                delete_train(train_number)
+    elif operation == texts[st.session_state.language]["view_seats"]:
+        with st.form(key='view_seats_form'):
+            train_number = st.text_input("Train Number", key='view_seat_number')
+            submit_button = st.form_submit_button(label='View Seats')
 
-            cancel_train(train_number)
+            if submit_button:
+                view_seat(train_number)
+    elif operation == texts[st.session_state.language]["book_tickets"]:
+        with st.form(key='book_tickets_form'):
+            train_number = st.text_input("Train Number", key='book_ticket_number')
+            passenger_name = st.text_input("Passenger Name", key='passenger_name')
+            passenger_age = st.text_input("Passenger Age", key='passenger_age')
+            passenger_gender = st.selectbox("Passenger Gender", ["Male", "Female", "Other"], key='passenger_gender')
+            seat_type = st.selectbox("Seat Type", ["window", "aisle", "middle"], key='seat_type')
+            submit_button = st.form_submit_button(label='Book Ticket')
 
-        elif operation == "Delete Train":
-            train_number = st.sidebar.text_input("Train Number to Delete")
+            if submit_button:
+                book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+    elif operation == texts[st.session_state.language]["search_train"]:
+        with st.form(key='search_train_form'):
+            train_number = st.text_input("Train Number", key='search_train_number')
+            train_name = st.text_input("Train Name", key='search_train_name')
+            submit_button = st.form_submit_button(label='Search Train')
 
-            delete_train(train_number)
-
-        elif operation == "View Seats":
-            train_number = st.sidebar.text_input("Enter Train Number to View Seats")
-
-            view_seat(train_number)
-
-        elif operation == "Book Tickets":
-            train_number = st.sidebar.text_input("Enter Train Number to Book Tickets")
-            passenger_name = st.sidebar.text_input("Passenger Name")
-            passenger_age = st.sidebar.text_input("Passenger Age")
-            passenger_gender = st.sidebar.selectbox("Passenger Gender", ["Male", "Female", "Other"])
-            seat_type = st.sidebar.selectbox("Seat Type", ["window", "aisle", "middle"])
-
-            book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
-
-        elif operation == "Search Train":
-            train_number = st.sidebar.text_input("Enter Train Number to Search")
-            train_name = st.sidebar.text_input("Enter Train Name (optional)")
-
-            train_data = search_train(train_number, train_name)
-            if train_data:
-                st.sidebar.success(f"Train found: {train_data}")
-            else:
-                st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found.")
-
-    conn.close()
+            if submit_button:
+                train_data = search_train(train_number, train_name)
+                if train_data:
+                    st.success(texts[st.session_state.language]["train_found"].format(train_data=train_data))
+                else:
+                    st.warning(texts[st.session_state.language]["train_not_found"].format(train_number=train_number, train_name=train_name))
 
 if __name__ == "__main__":
     main()
