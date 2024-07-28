@@ -170,7 +170,8 @@ def search_train(train_number, train_name):
 
 def allocate_seat_manual(train_number, seat_number, passenger_name, passenger_age, passenger_gender):
     try:
-        c.execute(f"UPDATE seats_{train_number} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", (passenger_name, passenger_age, passenger_gender, seat_number))
+        c.execute(f"UPDATE seats_{train_number} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", 
+                  (passenger_name, passenger_age, passenger_gender, seat_number))
         conn.commit()
         st.success(texts[st.session_state.language]["seat_allocated"])
     except sqlite3.Error as e:
@@ -182,7 +183,7 @@ def main():
         lang = st.selectbox("Choose Language / भाषा चुनें", ["English", "हिन्दी"])
         if st.button("Submit"):
             st.session_state.language = lang
-            st.experimental_rerun()
+            st.experimental_rerun()  # Rerun to reload the app with selected language
     else:
         st.title(texts[st.session_state.language]["title"])
         st.markdown(f'<div style="text-align: center; font-size: 24px;">{texts[st.session_state.language]["operations"]}</div>', unsafe_allow_html=True)
@@ -275,8 +276,6 @@ def main():
 
                 if submit_button:
                     allocate_seat_manual(train_number, seat_number, passenger_name, passenger_age, passenger_gender)
-
-    conn.close()
 
 if __name__ == "__main__":
     main()
