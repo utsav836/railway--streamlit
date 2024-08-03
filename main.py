@@ -134,7 +134,7 @@ def main():
         r"""
         <style>
         .reportview-container {
-            background: url("https://your-image-url.com/background.jpg") no-repeat center center fixed;
+            background: url("C:\Users\HP\Downloads\trainnn.jpg") no-repeat center center fixed;
             background-size: cover;
         }
         .sidebar .sidebar-content {
