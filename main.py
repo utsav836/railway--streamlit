@@ -2,9 +2,11 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
+# Database connection
 conn = sqlite3.connect('railwaydb.db', check_same_thread=False)
 c = conn.cursor()
 
+# Function definitions (same as before)
 def create_db():
     try:
         c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT PRIMARY KEY, train_name TEXT)")
@@ -15,8 +17,7 @@ def create_db():
 
 def add_train(train_name, train_number):
     try:
-        c.execute("INSERT INTO trains (train_no, train_name) VALUES (?, ?)",
-                  (train_number, train_name))
+        c.execute("INSERT INTO trains (train_no, train_name) VALUES (?, ?)", (train_number, train_name))
         conn.commit()
         create_seat_table(train_number)
         st.success("Train added successfully.")
@@ -131,7 +132,22 @@ def allocate_seat_manual(train_number, seat_number, passenger_name, passenger_ag
 def main():
     st.title("Railway Management System")
     
-  
+    # Add custom CSS to set the background image
+    st.markdown(
+        """
+        <style>
+        .reportview-container {
+            background: url("C:\Users\HP\Downloads\trainnn.jpg") no-repeat center center fixed;
+            background-size: cover;
+        }
+        .sidebar .sidebar-content {
+            background-color: rgba(0,0,0,0.5); /* Semi-transparent background for sidebar */
+        }
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
+    
     operation = st.selectbox(
         "Choose Operation",
         [
@@ -198,26 +214,4 @@ def main():
         with st.form(key='search_train_form'):
             train_number = st.text_input("Train Number", key='search_train_number')
             train_name = st.text_input("Train Name (optional)", key='search_train_name')
-            submit_button = st.form_submit_button(label="Search Train")
-
-            if submit_button:
-                train_data = search_train(train_number)
-                if train_data:
-                    st.success(f"Train found: {train_data}")
-                else:
-                    st.warning(f"Train {train_number} with name '{train_name}' not found.")
-    
-    elif operation == "Allocate Seat":
-        with st.form(key='seat_allocation_form'):
-            train_number = st.text_input("Train Number", key='allocation_train_number')
-            seat_number = st.text_input("Seat Number", key='seat_number')
-            passenger_name = st.text_input("Passenger Name", key='allocation_passenger_name')
-            passenger_age = st.text_input("Passenger Age", key='allocation_passenger_age')
-            passenger_gender = st.selectbox("Passenger Gender", ["Male", "Female", "Other"], key='allocation_passenger_gender')
-            submit_button = st.form_submit_button(label="Allocate Seat")
-
-            if submit_button:
-                allocate_seat_manual(train_number, seat_number, passenger_name, passenger_age, passenger_gender)
-
-if __name__ == "__main__":
-    main()
+            submit_button = st.form
