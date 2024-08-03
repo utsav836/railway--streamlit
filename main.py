@@ -1,6 +1,6 @@
 import streamlit as st
-import sqlite3
 import pandas as pd
+import sqlite3
 
 conn = sqlite3.connect('railwaydb.db', check_same_thread=False)
 c = conn.cursor()
@@ -127,24 +127,63 @@ def allocate_seat_manual(train_number, seat_number, passenger_name, passenger_ag
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
+def get_chatbot_response(user_input):
+    responses = {
+        "train schedule": "I can help with the train schedule. Please provide the train number.",
+        "book ticket": "To book a ticket, please provide your name, age, gender, and the train number.",
+        "cancel ticket": "To cancel a ticket, please provide the booking details.",
+        "train number": "Please provide the train number to get more details.",
+        "default": "Sorry, I didn't understand that. Can you please provide more details?"
+    }
+    return responses.get(user_input.lower(), responses["default"])
+
 def main():
     st.title("Railway Management System")
     
     st.markdown(
-        r"""
+        """
         <style>
         .reportview-container {
-            background: url("C:\Users\HP\Downloads\trainnn.jpg") no-repeat center center fixed;
+            background: url(""C:\Users\HP\Downloads\trainnn.jpg"") no-repeat center center fixed;
             background-size: cover;
         }
         .sidebar .sidebar-content {
             background-color: rgba(0,0,0,0.5);
         }
+        .chatbot-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .chatbot-popup {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            z-index: 1000;
+        }
         </style>
-        """, 
+        """,
         unsafe_allow_html=True
     )
-    
+
     operation = st.selectbox(
         "Choose Operation",
         [
@@ -155,7 +194,8 @@ def main():
             "View Seats",
             "Book Tickets",
             "Search Train",
-            "Allocate Seat"
+            "Allocate Seat",
+            "Chat with Bot"
         ]
     )
     
@@ -231,6 +271,35 @@ def main():
 
             if submit_button:
                 allocate_seat_manual(train_number, seat_number, passenger_name, passenger_age, passenger_gender)
+    
+    elif operation == "Chat with Bot":
+        st.header("Chat with Bot")
+        user_input = st.text_input("Ask me anything about the railway system:")
+        if user_input:
+            response = get_chatbot_response(user_input)
+            st.write(response)
+
+    st.markdown(
+        """
+        <div class="chatbot-button" onclick="document.getElementById('chatbot-popup').style.display='block'">
+            <img src=""C:\Users\HP\Downloads\chatbot.jpg"" alt="Chatbot" style="width: 30px; height: 30px;">
+        </div>
+        <div id="chatbot-popup" class="chatbot-popup">
+            <h4>Chat with Bot</h4>
+            <textarea id="chatbot-textarea" style="width: 100%; height: 80%;"></textarea>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <script>
+        function sendMessage() {
+            const userMessage = document.getElementById('chatbot-textarea').value;
+            // Implement API call to get chatbot response
+            const response = "This is a placeholder response.";
+            document.getElementById('chatbot-textarea').value += "\\nBot: " + response;
+        }
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     main()
