@@ -144,7 +144,7 @@ def main():
         """
         <style>
         .reportview-container {
-            background: url(""C:\Users\HP\Downloads\trainnn.jpg"") no-repeat center center fixed;
+            background: url("C:\Users\HP\Downloads\trainnn.jpg") no-repeat center center fixed;
             background-size: cover;
         }
         .sidebar .sidebar-content {
@@ -282,7 +282,7 @@ def main():
     st.markdown(
         """
         <div class="chatbot-button" onclick="document.getElementById('chatbot-popup').style.display='block'">
-            <img src=""C:\Users\HP\Downloads\chatbot.jpg"" alt="Chatbot" style="width: 30px; height: 30px;">
+            <img src="C:\Users\HP\Downloads\chatbot.jpg" alt="Chatbot" style="width: 30px; height: 30px;">
         </div>
         <div id="chatbot-popup" class="chatbot-popup">
             <h4>Chat with Bot</h4>
@@ -292,7 +292,6 @@ def main():
         <script>
         function sendMessage() {
             const userMessage = document.getElementById('chatbot-textarea').value;
-            // Implement API call to get chatbot response
             const response = "This is a placeholder response.";
             document.getElementById('chatbot-textarea').value += "\\nBot: " + response;
         }
