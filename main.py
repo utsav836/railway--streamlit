@@ -122,6 +122,12 @@ def view_seat(conn, train_number):
 
 def book_tickets(conn, train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
+        # Check if the train exists before booking
+        train_query = conn.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
+        if train_query.fetchone() is None:
+            st.error(f"Train number {train_number} does not exist. Please add the train first.")
+            return
+        
         seat_number = allocate_seat(conn, train_number, seat_type)
         if seat_number:
             table_name = f"seats_{train_number}"
