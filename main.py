@@ -1,16 +1,36 @@
 import streamlit as st
 import sqlite3
+from google.oauth2 import id_token
+from google.auth.transport import requests
+import os
 
-# Establish connection to SQLite database
-conn = sqlite3.connect('railwaydb')
+# SQLite database connection
+conn = sqlite3.connect('railwaydb', check_same_thread=False)
 c = conn.cursor()
 
 # Function to create initial database tables if they don't exist
 def create_db():
-    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT PRIMARY KEY, train_name TEXT, start_destination TEXT, end_destination TEXT)")
     conn.commit()
+
+# Function to add a new user
+def add_user(username, password):
+    c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+    conn.commit()
+
+# Function to check if a user exists
+def check_user(username, password):
+    c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+    return c.fetchone() is not None
+
+# Function to verify Google token
+def verify_google_token(token):
+    try:
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), os.getenv("GOOGLE_CLIENT_ID"))
+        return idinfo['email']
+    except ValueError:
+        return None
 
 # Function to add a new train destination
 def add_train_destination(train_name, train_number, start_destination, end_destination):
@@ -46,8 +66,13 @@ def view_seat(train_number):
     try:
         seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM seats_{train_number} ORDER BY seat_number ASC")
         result = seat_query.fetchall()
+        
         if result:
-            st.dataframe(data=result)
+            st.write("### Seat Details")
+            for row in result:
+                seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender = row
+                booked_status = "Yes" if booked else "No"
+                st.write(f"**Seat Number:** {seat_number}, **Seat Type:** {seat_type}, **Booked:** {booked_status}, **Passenger Name:** {passenger_name}, **Passenger Age:** {passenger_age}, **Passenger Gender:** {passenger_gender}")
         else:
             st.info("No seats found for this train.")
     except sqlite3.Error as e:
@@ -76,40 +101,10 @@ def allocate_seat(train_number, seat_type):
         st.error(f"SQLite error: {e}")
         return None
 
-# Function to cancel a train and associated seats
-def cancel_train(train_number):
+# Function to search for a train based on train number
+def search_train(train_number):
     try:
-        train_data = search_train(train_number, '')
-        if train_data:
-            c.execute("DELETE FROM trains WHERE train_no=?", (train_number,))
-            conn.commit()
-            c.execute(f"DROP TABLE IF EXISTS seats_{train_number}")
-            conn.commit()
-            st.success(f"Train {train_number} and associated seats have been canceled successfully.")
-        else:
-            st.warning(f"Train {train_number} does not exist.")
-    except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
-
-# Function to delete a train and associated seats
-def delete_train(train_number):
-    try:
-        train_data = search_train(train_number, '')
-        if train_data:
-            c.execute("DELETE FROM trains WHERE train_no=?", (train_number,))
-            conn.commit()
-            c.execute(f"DROP TABLE IF EXISTS seats_{train_number}")
-            conn.commit()
-            st.success(f"Train {train_number} and associated seats have been deleted successfully.")
-        else:
-            st.warning(f"Train {train_number} does not exist.")
-    except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
-
-# Function to search for a train based on train number and name
-def search_train(train_number, train_name):
-    try:
-        train_query = c.execute("SELECT * FROM trains WHERE train_no=? AND train_name=?", (train_number, train_name))
+        train_query = c.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
         train_data = train_query.fetchone()
         return train_data
     except sqlite3.Error as e:
@@ -118,61 +113,87 @@ def search_train(train_number, train_name):
 
 # Main function to handle Streamlit interface and operations
 def main():
-    st.sidebar.title("Railway Management System")
-    operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
+    st.title("Railway Management System")
+    
+    # Check if user is logged in
+    if 'logged_in' not in st.session_state:
+        # Login and Signup Section
+        st.sidebar.header("User Authentication")
+        option = st.sidebar.selectbox("Select Option", ["Login", "Signup", "Google Sign-In"])
+        
+        if option == "Login":
+            username = st.sidebar.text_input("Username")
+            password = st.sidebar.text_input("Password", type="password")
+            if st.sidebar.button("Login"):
+                if check_user(username, password):
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.success("Login successful!")
+                else:
+                    st.error("Invalid username or password.")
 
-    if operation == "Create Database":
-        create_db()
-        st.sidebar.success("Database created successfully.")
+        elif option == "Signup":
+            new_username = st.sidebar.text_input("New Username")
+            new_password = st.sidebar.text_input("New Password", type="password")
+            if st.sidebar.button("Signup"):
+                try:
+                    add_user(new_username, new_password)
+                    st.success("Signup successful! You can now log in.")
+                except sqlite3.IntegrityError:
+                    st.error("Username already exists. Please choose a different username.")
 
-    elif operation == "Add Train Destination":
-        train_name = st.sidebar.text_input("Train Name")
-        train_number = st.sidebar.text_input("Train Number")
-        start_destination = st.sidebar.text_input("Start Destination")
-        end_destination = st.sidebar.text_input("End Destination")
+        elif option == "Google Sign-In":
+            token = st.sidebar.text_input("Enter Google Token")
+            if st.sidebar.button("Sign in with Google"):
+                email = verify_google_token(token)
+                if email:
+                    st.session_state.logged_in = True
+                    st.session_state.username = email
+                    st.success("Google Sign-In successful!")
+                else:
+                    st.error("Invalid Google token.")
 
-        if st.sidebar.button("Add Train"):
-            add_train_destination(train_name, train_number, start_destination, end_destination)
-            st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
+    else:
+        st.sidebar.success("Logged in as: " + st.session_state.username)
+        operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "View Seats", "Book Tickets", "Search Train"])
 
-    elif operation == "Cancel Train":
-        train_number = st.sidebar.text_input("Train Number to Cancel")
+        if operation == "Create Database":
+            create_db()
+            st.sidebar.success("Database created successfully.")
 
-        if st.sidebar.button("Cancel Train"):
-            cancel_train(train_number)
+        elif operation == "Add Train Destination":
+            train_name = st.sidebar.text_input("Train Name")
+            train_number = st.sidebar.text_input("Train Number")
+            start_destination = st.sidebar.text_input("Start Destination")
+            end_destination = st.sidebar.text_input("End Destination")
 
-    elif operation == "Delete Train":
-        train_number = st.sidebar.text_input("Train Number to Delete")
+            if st.sidebar.button("Add Train"):
+                add_train_destination(train_name, train_number, start_destination, end_destination)
+                st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
 
-        if st.sidebar.button("Delete Train"):
-            delete_train(train_number)
+        elif operation == "View Seats":
+            train_number = st.sidebar.text_input("Enter Train Number to View Seats")
+            if st.sidebar.button("View Seats"):
+                view_seat(train_number)
 
-    elif operation == "View Seats":
-        train_number = st.sidebar.text_input("Enter Train Number to View Seats")
+        elif operation == "Book Tickets":
+            train_number = st.sidebar.text_input("Enter Train Number to Book Tickets")
+            passenger_name = st.sidebar.text_input("Passenger Name")
+            passenger_age = st.sidebar.text_input("Passenger Age")
+            passenger_gender = st.sidebar.selectbox("Passenger Gender", ["Male", "Female", "Other"])
+            seat_type = st.sidebar.selectbox("Seat Type", ["window", "aisle", "middle"])
 
-        if st.sidebar.button("View Seats"):
-            view_seat(train_number)
+            if st.sidebar.button("Book Ticket"):
+                book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
 
-    elif operation == "Book Tickets":
-        train_number = st.sidebar.text_input("Enter Train Number to Book Tickets")
-        passenger_name = st.sidebar.text_input("Passenger Name")
-        passenger_age = st.sidebar.text_input("Passenger Age")
-        passenger_gender = st.sidebar.selectbox("Passenger Gender", ["Male", "Female", "Other"])
-        seat_type = st.sidebar.selectbox("Seat Type", ["window", "aisle", "middle"])
-
-        if st.sidebar.button("Book Ticket"):
-            book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
-
-    elif operation == "Search Train":
-        train_number = st.sidebar.text_input("Enter Train Number to Search")
-        train_name = st.sidebar.text_input("Enter Train Name (optional)")
-
-        if st.sidebar.button("Search Train"):
-            train_data = search_train(train_number, train_name)
-            if train_data:
-                st.sidebar.success(f"Train found: {train_data}")
-            else:
-                st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found.")
+        elif operation == "Search Train":
+            train_number = st.sidebar.text_input("Enter Train Number to Search")
+            if st.sidebar.button("Search Train"):
+                train_data = search_train(train_number)
+                if train_data:
+                    st.sidebar.success(f"Train found: {train_data}")
+                else:
+                    st.sidebar.warning(f"Train {train_number} not found.")
 
     conn.close()
 
