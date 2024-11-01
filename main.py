@@ -121,7 +121,6 @@ def main():
                     st.session_state.logged_in = True
                     st.session_state.username = login_username  # Store username
                     st.success("Logged in successfully!")
-                    st.balloons()  # Optional: add a fun effect
                 else:
                     st.error("Invalid username or password.")
 
