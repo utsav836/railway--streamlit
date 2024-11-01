@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
+# Establishing a connection to the database
 conn = sqlite3.connect('railwaydb.db', check_same_thread=False)
 c = conn.cursor()
 
@@ -153,7 +154,7 @@ def main():
             "Book Tickets",
             "Search Train",
             "Allocate Seat",
-            "Chat with Bot"
+          
         ]
     )
     
@@ -208,7 +209,6 @@ def main():
     elif operation == "Search Train":
         with st.form(key='search_train_form'):
             train_number = st.text_input("Train Number", key='search_train_number')
-            train_name = st.text_input("Train Name (optional)", key='search_train_name')
             submit_button = st.form_submit_button(label="Search Train")
 
             if submit_button:
@@ -216,7 +216,7 @@ def main():
                 if train_data:
                     st.success(f"Train found: {train_data}")
                 else:
-                    st.warning(f"Train {train_number} with name '{train_name}' not found.")
+                    st.warning(f"Train {train_number} not found.")
     
     elif operation == "Allocate Seat":
         with st.form(key='seat_allocation_form'):
@@ -230,12 +230,7 @@ def main():
             if submit_button:
                 allocate_seat_manual(train_number, seat_number, passenger_name, passenger_age, passenger_gender)
     
-    elif operation == "Chat with Bot":
-        st.header("Chat with Bot")
-        user_input = st.text_input("Ask me anything about the railway system:")
-        if user_input:
-            response = get_chatbot_response(user_input)
-            st.write(response)
+
 
 if __name__ == "__main__":
     main()
