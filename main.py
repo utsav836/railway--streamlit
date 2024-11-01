@@ -227,6 +227,7 @@ def main():
     elif operation == "Search Train":
         with st.form(key='search_train_form'):
             train_number = st.text_input("Train Number", key='search_train_number')
+            train_name = st.text_input("Train Name (optional)", key='search_train_name')
             submit_button = st.form_submit_button(label="Search Train")
 
             if submit_button:
