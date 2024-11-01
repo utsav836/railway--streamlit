@@ -25,7 +25,17 @@ def add_train(train_name, train_number):
 
 def create_seat_table(train_number):
     try:
-        c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
+        table_name = f"seats_{train_number}"
+        c.execute(f"""
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                seat_number INTEGER PRIMARY KEY,
+                seat_type TEXT,
+                booked INTEGER DEFAULT 0,
+                passenger_name TEXT,
+                passenger_age TEXT,
+                passenger_gender TEXT
+            )
+        """)
         conn.commit()
         insert_seats(train_number)
     except sqlite3.Error as e:
@@ -33,10 +43,11 @@ def create_seat_table(train_number):
 
 def insert_seats(train_number):
     try:
+        table_name = f"seats_{train_number}"
         for i in range(1, 201):
             val = categorize_seat(i)
             parameters = (i, val, 0, '', '', '')
-            c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
+            c.execute(f"INSERT INTO {table_name} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
         conn.commit()
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
@@ -51,7 +62,14 @@ def categorize_seat(seat_number):
 
 def view_seat(train_number):
     try:
-        seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM seats_{train_number} ORDER BY seat_number ASC")
+        table_name = f"seats_{train_number}"
+        # Check if the table exists
+        c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+        if c.fetchone() is None:
+            st.error(f"No seat information found for train number {train_number}. Please ensure the train is added correctly.")
+            return
+
+        seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM {table_name} ORDER BY seat_number ASC")
         result = seat_query.fetchall()
         if result:
             df = pd.DataFrame(result, columns=['Seat Number', 'Seat Type', 'Booked', 'Passenger Name', 'Passenger Age', 'Passenger Gender'])
@@ -154,7 +172,7 @@ def main():
             "Book Tickets",
             "Search Train",
             "Allocate Seat",
-          
+            "Chat with Bot"
         ]
     )
     
@@ -230,7 +248,12 @@ def main():
             if submit_button:
                 allocate_seat_manual(train_number, seat_number, passenger_name, passenger_age, passenger_gender)
     
-
+    elif operation == "Chat with Bot":
+        st.header("Chat with Bot")
+        user_input = st.text_input("Ask me anything about the railway system:")
+        if user_input:
+            response = get_chatbot_response(user_input)
+            st.write(response)
 
 if __name__ == "__main__":
     main()
