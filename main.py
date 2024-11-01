@@ -93,12 +93,20 @@ def categorize_seat(seat_number):
 def view_seat(conn, train_number):
     table_name = f"seats_{train_number}"
     try:
+        # Check if the train exists in the trains table
+        train_query = conn.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
+        if train_query.fetchone() is None:
+            st.error(f"Train number {train_number} does not exist. Please add the train first.")
+            return
+
+        # Check if the seat table exists
         c = conn.cursor()
         c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
         if c.fetchone() is None:
-            st.error(f"No seat information found for train number {train_number}. Please ensure the train is added correctly.")
+            st.error(f"No seat information found for train number {train_number}.")
             return
 
+        # Fetch and display seat information
         seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM {table_name} ORDER BY seat_number ASC")
         result = seat_query.fetchall()
         if result:
@@ -190,10 +198,7 @@ def main():
                 submit_button = st.form_submit_button(label="View Seats")
 
                 if submit_button:
-                    if search_train(conn, train_number):
-                        view_seat(conn, train_number)
-                    else:
-                        st.error(f"Train number {train_number} does not exist.")
+                    view_seat(conn, train_number)
 
         elif operation == "Book Tickets":
             with st.form(key='book_tickets_form'):
