@@ -20,6 +20,8 @@ def add_train(train_name, train_number):
         conn.commit()
         create_seat_table(train_number)
         st.success("Train added successfully.")
+    except sqlite3.IntegrityError:
+        st.error("Train number already exists.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
@@ -78,8 +80,6 @@ def view_seat(train_number):
             st.info("No seats found for this train.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
 
 def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
@@ -227,7 +227,6 @@ def main():
     elif operation == "Search Train":
         with st.form(key='search_train_form'):
             train_number = st.text_input("Train Number", key='search_train_number')
-            train_name = st.text_input("Train Name (optional)", key='search_train_name')
             submit_button = st.form_submit_button(label="Search Train")
 
             if submit_button:
