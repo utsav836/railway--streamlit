@@ -2,21 +2,24 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-# Connect to SQLite database
-conn = sqlite3.connect('railwaydb.db', check_same_thread=False)
-c = conn.cursor()
+# Function to connect to the SQLite database
+def create_connection():
+    conn = sqlite3.connect('railwaydb.db', check_same_thread=False)
+    return conn
 
 # Create necessary databases
-def create_user_db():
-    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
-    conn.commit()
+def create_user_db(conn):
+    with conn:
+        conn.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
 
-def create_db():
-    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT PRIMARY KEY, train_name TEXT)")
-    conn.commit()
+def create_db(conn):
+    with conn:
+        conn.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT PRIMARY KEY, train_name TEXT)")
 
-create_user_db()
-create_db()
+# Initialize the databases
+conn = create_connection()
+create_user_db(conn)
+create_db(conn)
 
 # Hardcoded user credentials for demo purposes
 users = {"admin": "password123"}
@@ -41,41 +44,41 @@ def set_background():
     )
 
 # Functions for train management
-def add_train(train_name, train_number):
+def add_train(conn, train_name, train_number):
     try:
-        c.execute("INSERT INTO trains (train_no, train_name) VALUES (?, ?)", (train_number, train_name))
-        conn.commit()
-        create_seat_table(train_number)
+        with conn:
+            conn.execute("INSERT INTO trains (train_no, train_name) VALUES (?, ?)", (train_number, train_name))
+        create_seat_table(conn, train_number)
         st.success("Train added successfully.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-def create_seat_table(train_number):
+def create_seat_table(conn, train_number):
+    table_name = f"seats_{train_number}"
     try:
-        table_name = f"seats_{train_number}"
-        c.execute(f"""
-            CREATE TABLE IF NOT EXISTS {table_name} (
-                seat_number INTEGER PRIMARY KEY,
-                seat_type TEXT,
-                booked INTEGER DEFAULT 0,
-                passenger_name TEXT,
-                passenger_age TEXT,
-                passenger_gender TEXT
-            )
-        """)
-        conn.commit()
-        insert_seats(train_number)
+        with conn:
+            conn.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    seat_number INTEGER PRIMARY KEY,
+                    seat_type TEXT,
+                    booked INTEGER DEFAULT 0,
+                    passenger_name TEXT,
+                    passenger_age TEXT,
+                    passenger_gender TEXT
+                )
+            """)
+        insert_seats(conn, train_number)
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-def insert_seats(train_number):
+def insert_seats(conn, train_number):
+    table_name = f"seats_{train_number}"
     try:
-        table_name = f"seats_{train_number}"
-        for i in range(1, 201):
-            seat_type = categorize_seat(i)
-            parameters = (i, seat_type, 0, '', '', '')
-            c.execute(f"INSERT INTO {table_name} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
-        conn.commit()
+        with conn:
+            for i in range(1, 201):
+                seat_type = categorize_seat(i)
+                parameters = (i, seat_type, 0, '', '', '')
+                conn.execute(f"INSERT INTO {table_name} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
@@ -87,10 +90,11 @@ def categorize_seat(seat_number):
     else:
         return "middle"
 
-def view_seat(train_number):
+def view_seat(conn, train_number):
     table_name = f"seats_{train_number}"
     try:
         # Check if the table exists
+        c = conn.cursor()
         c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
         if c.fetchone() is None:
             st.error(f"No seat information found for train number {train_number}. Please ensure the train is added correctly.")
@@ -108,32 +112,32 @@ def view_seat(train_number):
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
 
-def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
+def book_tickets(conn, train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
-        seat_number = allocate_seat(train_number, seat_type)
+        seat_number = allocate_seat(conn, train_number, seat_type)
         if seat_number:
             table_name = f"seats_{train_number}"
-            c.execute(f"UPDATE {table_name} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", (passenger_name, passenger_age, passenger_gender, seat_number))
-            conn.commit()
+            with conn:
+                conn.execute(f"UPDATE {table_name} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", (passenger_name, passenger_age, passenger_gender, seat_number))
             st.success("Ticket booked successfully.")
         else:
             st.warning("No available seats of this type.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
-def allocate_seat(train_number, seat_type):
+def allocate_seat(conn, train_number, seat_type):
     try:
         table_name = f"seats_{train_number}"
-        seat_query = c.execute(f"SELECT seat_number FROM {table_name} WHERE booked=0 AND seat_type=? ORDER BY seat_number ASC LIMIT 1", (seat_type,))
+        seat_query = conn.execute(f"SELECT seat_number FROM {table_name} WHERE booked=0 AND seat_type=? ORDER BY seat_number ASC LIMIT 1", (seat_type,))
         result = seat_query.fetchone()
         return result[0] if result else None
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
         return None
 
-def search_train(train_number):
+def search_train(conn, train_number):
     try:
-        train_query = c.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
+        train_query = conn.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
         return train_query.fetchone()
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
@@ -178,7 +182,7 @@ def main():
                 submit_button = st.form_submit_button(label="Add Train")
 
                 if submit_button:
-                    add_train(train_name, train_number)
+                    add_train(conn, train_name, train_number)
         
         elif operation == "View Seats":
             with st.form(key='view_seats_form'):
@@ -186,7 +190,7 @@ def main():
                 submit_button = st.form_submit_button(label="View Seats")
 
                 if submit_button:
-                    view_seat(train_number)
+                    view_seat(conn, train_number)
 
         elif operation == "Book Tickets":
             with st.form(key='book_tickets_form'):
@@ -198,7 +202,7 @@ def main():
                 submit_button = st.form_submit_button(label="Book Tickets")
 
                 if submit_button:
-                    book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+                    book_tickets(conn, train_number, passenger_name, passenger_age, passenger_gender, seat_type)
 
         elif operation == "Search Train":
             with st.form(key='search_train_form'):
@@ -206,11 +210,14 @@ def main():
                 submit_button = st.form_submit_button(label="Search Train")
 
                 if submit_button:
-                    train_data = search_train(train_number)
+                    train_data = search_train(conn, train_number)
                     if train_data:
                         st.success(f"Train found: {train_data}")
                     else:
                         st.warning(f"Train {train_number} not found.")
+
+    # Close the connection when done
+    conn.close()
 
 if __name__ == "__main__":
     main()
