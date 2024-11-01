@@ -93,7 +93,6 @@ def categorize_seat(seat_number):
 def view_seat(conn, train_number):
     table_name = f"seats_{train_number}"
     try:
-        # Check if the table exists
         c = conn.cursor()
         c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
         if c.fetchone() is None:
@@ -104,6 +103,7 @@ def view_seat(conn, train_number):
         result = seat_query.fetchall()
         if result:
             df = pd.DataFrame(result, columns=['Seat Number', 'Seat Type', 'Booked', 'Passenger Name', 'Passenger Age', 'Passenger Gender'])
+            df['Booked'] = df['Booked'].apply(lambda x: 'Yes' if x else 'No')  # Convert 0/1 to Yes/No
             st.dataframe(df.style.set_properties(**{'text-align': 'center'}))
         else:
             st.info("No seats found for this train.")
@@ -169,7 +169,7 @@ def main():
             "Choose Operation",
             [
                 "Add Train",
-                "View Seats",
+                "View All Seats",
                 "Book Tickets",
                 "Search Train"
             ]
@@ -184,13 +184,16 @@ def main():
                 if submit_button:
                     add_train(conn, train_name, train_number)
         
-        elif operation == "View Seats":
+        elif operation == "View All Seats":
             with st.form(key='view_seats_form'):
                 train_number = st.text_input("Train Number", key='view_seat_number')
                 submit_button = st.form_submit_button(label="View Seats")
 
                 if submit_button:
-                    view_seat(conn, train_number)
+                    if search_train(conn, train_number):
+                        view_seat(conn, train_number)
+                    else:
+                        st.error(f"Train number {train_number} does not exist.")
 
         elif operation == "Book Tickets":
             with st.form(key='book_tickets_form'):
