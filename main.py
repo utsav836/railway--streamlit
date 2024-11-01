@@ -105,40 +105,37 @@ def main():
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
 
-    # Authentication
     st.title("Railway Management System")
-    
+
     if not st.session_state.logged_in:
         # Login Section
-        login_expander = st.expander("Login", expanded=True)
-        with login_expander:
-            login_username = st.text_input("Username", key='login_username')
-            login_password = st.text_input("Password", type="password", key='login_password')
+        st.subheader("Login")
+        login_username = st.text_input("Username", key='login_username')
+        login_password = st.text_input("Password", type="password", key='login_password')
 
-            if st.button("Login"):
-                user = login(login_username, login_password)
-                if user:
-                    st.session_state.logged_in = True
-                    st.session_state.username = login_username  # Store username
-                    st.success("Logged in successfully!")
-                else:
-                    st.error("Invalid username or password.")
+        if st.button("Login"):
+            user = login(login_username, login_password)
+            if user:
+                st.session_state.logged_in = True
+                st.session_state.username = login_username  # Store username
+                st.success("Logged in successfully!")
+            else:
+                st.error("Invalid username or password.")
 
         # Signup Section
-        signup_expander = st.expander("Create Account")
-        with signup_expander:
-            signup_username = st.text_input("New Username", key='signup_username')
-            signup_password = st.text_input("New Password", type="password", key='signup_password')
+        st.subheader("Create Account")
+        signup_username = st.text_input("New Username", key='signup_username')
+        signup_password = st.text_input("New Password", type="password", key='signup_password')
 
-            if st.button("Create Account"):
-                if signup_username and signup_password:
-                    signup(signup_username, signup_password)
-                else:
-                    st.error("Please enter both username and password.")
+        if st.button("Create Account"):
+            if signup_username and signup_password:
+                signup(signup_username, signup_password)
+            else:
+                st.error("Please enter both username and password.")
     else:
         # Main App Logic after Login
         st.sidebar.title("Operations")
-        operation = st.sidebar.selectbox("Select Operation", ["Add Train", "View Trains", "Book Tickets", "View Seats"])
+        operation = st.sidebar.selectbox("Choose an operation", ["Add Train", "View Trains", "Book Tickets", "View Seats"])
 
         if operation == "Add Train":
             st.subheader("Add a New Train")
