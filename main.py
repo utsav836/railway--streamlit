@@ -103,7 +103,7 @@ def view_seat(conn, train_number):
         c = conn.cursor()
         c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
         if c.fetchone() is None:
-            st.error(f"No seat information found for train number {train_number}.")
+            st.error(f"No seat information found for train number {train_number}. Please add the train and its seats.")
             return
 
         # Fetch and display seat information
