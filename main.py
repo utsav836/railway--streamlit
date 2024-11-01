@@ -26,32 +26,23 @@ def login(username, password):
     user_query = c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
     return user_query.fetchone()
 
-# Functions for train management
+# Train management functions
 def add_train(train_name, train_number, start_destination, end_destination):
     try:
         c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", (train_number, train_name, start_destination, end_destination))
-        create_seat_table(train_number)
         conn.commit()
+        create_seat_table(train_number)
         st.success("Train added successfully.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
 def create_seat_table(train_number):
-    c.execute(f"""
-        CREATE TABLE IF NOT EXISTS seats_{train_number} (
-            seat_number INTEGER PRIMARY KEY,
-            seat_type TEXT,
-            booked INTEGER DEFAULT 0,
-            passenger_name TEXT,
-            passenger_age TEXT,
-            passenger_gender TEXT
-        )
-    """)
+    c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
     conn.commit()
     insert_seats(train_number)
 
 def insert_seats(train_number):
-    for i in range(1, 201):  # Assuming there are 200 seats per train
+    for i in range(1, 201):  # Assuming 200 seats per train
         seat_type = categorize_seat(i)
         parameters = (i, seat_type, 0, '', '', '')
         c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
@@ -65,109 +56,117 @@ def categorize_seat(seat_number):
     else:
         return "middle"
 
+def view_trains():
+    trains = c.execute("SELECT * FROM trains").fetchall()
+    if trains:
+        for train in trains:
+            st.write(f"Train No: {train[0]}, Name: {train[1]}, From: {train[2]}, To: {train[3]}")
+    else:
+        st.info("No trains found.")
+
 def view_seat(train_number):
     try:
         seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM seats_{train_number} ORDER BY seat_number ASC")
         result = seat_query.fetchall()
         if result:
-            st.write("Seat Availability:")
-            for row in result:
-                booked_status = "Booked" if row[2] == 1 else "Available"
-                st.write(f"Seat {row[0]} ({row[1]}): {booked_status} - Passenger: {row[3] if row[2] == 1 else 'N/A'}")
+            for seat in result:
+                status = "Booked" if seat[2] else "Available"
+                st.write(f"Seat {seat[0]} ({seat[1]}): {status} | Passenger: {seat[3]}, Age: {seat[4]}, Gender: {seat[5]}")
         else:
             st.info("No seats found for this train.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
 def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
-    seat_number = allocate_seat(train_number, seat_type)
-    if seat_number:
-        c.execute(f"UPDATE seats_{train_number} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", (passenger_name, passenger_age, passenger_gender, seat_number))
-        conn.commit()
-        st.success("Ticket booked successfully.")
-    else:
-        st.warning("No available seats of this type.")
+    try:
+        seat_number = allocate_seat(train_number, seat_type)
+        if seat_number:
+            c.execute(f"UPDATE seats_{train_number} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?", (passenger_name, passenger_age, passenger_gender, seat_number))
+            conn.commit()
+            st.success("Ticket booked successfully.")
+        else:
+            st.warning("No available seats of this type.")
+    except sqlite3.Error as e:
+        st.error(f"SQLite error: {e}")
 
 def allocate_seat(train_number, seat_type):
-    seat_query = c.execute(f"SELECT seat_number FROM seats_{train_number} WHERE booked=0 AND seat_type=? ORDER BY seat_number ASC LIMIT 1", (seat_type,))
-    result = seat_query.fetchone()
-    return result[0] if result else None
+    try:
+        seat_query = c.execute(f"SELECT seat_number FROM seats_{train_number} WHERE booked=0 AND seat_type=? ORDER BY seat_number ASC LIMIT 1", (seat_type,))
+        result = seat_query.fetchone()
+        return result[0] if result else None
+    except sqlite3.Error as e:
+        st.error(f"SQLite error: {e}")
+        return None
 
-# Main function to handle Streamlit interface
 def main():
     create_db()  # Create database and tables if they don't exist
 
+    # Authentication
     st.title("Railway Management System")
+    st.markdown("<h2 style='text-align: center;'>Welcome!</h2>", unsafe_allow_html=True)
 
     # Login Section
-    st.subheader("Login")
-    login_username = st.text_input("Username", key='login_username')
-    login_password = st.text_input("Password", type="password", key='login_password')
+    login_expander = st.expander("Login", expanded=True)
+    with login_expander:
+        login_username = st.text_input("Username", key='login_username')
+        login_password = st.text_input("Password", type="password", key='login_password')
 
-    if st.button("Login"):
-        user = login(login_username, login_password)
-        if user:
-            st.success("Logged in successfully!")
-            st.write(f"Welcome, {login_username}!")
-
-            # Train management features
-            operation = st.selectbox("Select Operation", ["Add Train", "View Seats", "Book Tickets", "View Trains"])
-
-            if operation == "Add Train":
-                train_name = st.text_input("Train Name")
-                train_number = st.text_input("Train Number")
-                start_destination = st.text_input("Start Destination")
-                end_destination = st.text_input("End Destination")
-
-                if st.button("Add Train"):
-                    if train_name and train_number and start_destination and end_destination:
-                        add_train(train_name, train_number, start_destination, end_destination)
-                    else:
-                        st.error("Please fill in all fields.")
-
-            elif operation == "View Seats":
-                train_number = st.text_input("Enter Train Number to View Seats")
-                if st.button("View Seats"):
-                    if train_number:
-                        view_seat(train_number)
-                    else:
-                        st.error("Please enter a train number.")
-
-            elif operation == "Book Tickets":
-                train_number = st.text_input("Enter Train Number to Book Tickets")
-                passenger_name = st.text_input("Passenger Name")
-                passenger_age = st.text_input("Passenger Age")
-                passenger_gender = st.selectbox("Passenger Gender", ["Male", "Female", "Other"])
-                seat_type = st.selectbox("Seat Type", ["window", "aisle", "middle"])
-
-                if st.button("Book Ticket"):
-                    if train_number and passenger_name and passenger_age:
-                        book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
-                    else:
-                        st.error("Please fill in all fields.")
-
-            elif operation == "View Trains":
-                trains = view_trains()
-                if trains:
-                    st.write("Trains in the system:")
-                    for train in trains:
-                        st.write(f"Train No: {train[0]}, Name: {train[1]}, From: {train[2]}, To: {train[3]}")
-                else:
-                    st.info("No trains found.")
-
-        else:
-            st.error("Invalid username or password.")
+        if st.button("Login"):
+            user = login(login_username, login_password)
+            if user:
+                st.session_state.logged_in = True
+                st.success("Logged in successfully!")
+                st.balloons()  # Optional: add a fun effect
+            else:
+                st.error("Invalid username or password.")
 
     # Signup Section
-    st.subheader("Create Account")
-    signup_username = st.text_input("New Username", key='signup_username')
-    signup_password = st.text_input("New Password", type="password", key='signup_password')
+    signup_expander = st.expander("Create Account")
+    with signup_expander:
+        signup_username = st.text_input("New Username", key='signup_username')
+        signup_password = st.text_input("New Password", type="password", key='signup_password')
 
-    if st.button("Create Account"):
-        if signup_username and signup_password:
-            signup(signup_username, signup_password)
-        else:
-            st.error("Please enter both username and password.")
+        if st.button("Create Account"):
+            if signup_username and signup_password:
+                signup(signup_username, signup_password)
+            else:
+                st.error("Please enter both username and password.")
+
+    # Main App Logic after Login
+    if st.session_state.get('logged_in'):
+        st.sidebar.title("Operations")
+        operation = st.sidebar.selectbox("Select Operation", ["Add Train", "View Trains", "Book Tickets", "View Seats"])
+
+        if operation == "Add Train":
+            with st.sidebar.form(key='add_train_form'):
+                train_name = st.text_input("Train Name", key='train_name')
+                train_number = st.text_input("Train Number", key='train_number')
+                start_destination = st.text_input("Start Destination", key='start_destination')
+                end_destination = st.text_input("End Destination", key='end_destination')
+                submit_button = st.form_submit_button(label="Add Train")
+                
+                if submit_button:
+                    add_train(train_name, train_number, start_destination, end_destination)
+
+        elif operation == "View Trains":
+            view_trains()
+
+        elif operation == "Book Tickets":
+            train_number = st.sidebar.text_input("Enter Train Number")
+            passenger_name = st.sidebar.text_input("Passenger Name")
+            passenger_age = st.sidebar.text_input("Passenger Age")
+            passenger_gender = st.sidebar.selectbox("Passenger Gender", ["Male", "Female", "Other"])
+            seat_type = st.sidebar.selectbox("Seat Type", ["window", "aisle", "middle"])
+
+            if st.sidebar.button("Book Ticket"):
+                book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+
+        elif operation == "View Seats":
+            train_number = st.sidebar.text_input("Enter Train Number to View Seats")
+            if st.sidebar.button("View Seats"):
+                view_seat(train_number)
+
+    conn.close()
 
 if __name__ == "__main__":
     main()
