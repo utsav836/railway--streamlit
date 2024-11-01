@@ -50,6 +50,7 @@ def add_train(conn, train_name, train_number):
             conn.execute("INSERT INTO trains (train_no, train_name) VALUES (?, ?)", (train_number, train_name))
         create_seat_table(conn, train_number)
         st.success("Train added successfully.")
+        view_seat(conn, train_number)  # Display seats immediately after adding the train
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
@@ -93,12 +94,6 @@ def categorize_seat(seat_number):
 def view_seat(conn, train_number):
     table_name = f"seats_{train_number}"
     try:
-        # Check if the train exists in the trains table
-        train_query = conn.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
-        if train_query.fetchone() is None:
-            st.error(f"Train number {train_number} does not exist. Please add the train first.")
-            return
-
         # Check if the seat table exists
         c = conn.cursor()
         c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
@@ -122,12 +117,6 @@ def view_seat(conn, train_number):
 
 def book_tickets(conn, train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
-        # Check if the train exists before booking
-        train_query = conn.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
-        if train_query.fetchone() is None:
-            st.error(f"Train number {train_number} does not exist. Please add the train first.")
-            return
-        
         seat_number = allocate_seat(conn, train_number, seat_type)
         if seat_number:
             table_name = f"seats_{train_number}"
