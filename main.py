@@ -101,40 +101,43 @@ def allocate_seat(train_number, seat_type):
 def main():
     create_db()  # Create database and tables if they don't exist
 
+    # Check if user is logged in
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+
     # Authentication
     st.title("Railway Management System")
-    st.markdown("<h2 style='text-align: center;'>Welcome!</h2>", unsafe_allow_html=True)
+    
+    if not st.session_state.logged_in:
+        # Login Section
+        login_expander = st.expander("Login", expanded=True)
+        with login_expander:
+            login_username = st.text_input("Username", key='login_username')
+            login_password = st.text_input("Password", type="password", key='login_password')
 
-    # Login Section
-    login_expander = st.expander("Login", expanded=True)
-    with login_expander:
-        login_username = st.text_input("Username", key='login_username')
-        login_password = st.text_input("Password", type="password", key='login_password')
+            if st.button("Login"):
+                user = login(login_username, login_password)
+                if user:
+                    st.session_state.logged_in = True
+                    st.session_state.username = login_username  # Store username
+                    st.success("Logged in successfully!")
+                    st.balloons()  # Optional: add a fun effect
+                else:
+                    st.error("Invalid username or password.")
 
-        if st.button("Login"):
-            user = login(login_username, login_password)
-            if user:
-                st.session_state.logged_in = True
-                st.session_state.username = login_username  # Store username
-                st.success("Logged in successfully!")
-                st.balloons()  # Optional: add a fun effect
-            else:
-                st.error("Invalid username or password.")
+        # Signup Section
+        signup_expander = st.expander("Create Account")
+        with signup_expander:
+            signup_username = st.text_input("New Username", key='signup_username')
+            signup_password = st.text_input("New Password", type="password", key='signup_password')
 
-    # Signup Section
-    signup_expander = st.expander("Create Account")
-    with signup_expander:
-        signup_username = st.text_input("New Username", key='signup_username')
-        signup_password = st.text_input("New Password", type="password", key='signup_password')
-
-        if st.button("Create Account"):
-            if signup_username and signup_password:
-                signup(signup_username, signup_password)
-            else:
-                st.error("Please enter both username and password.")
-
-    # Main App Logic after Login
-    if st.session_state.get('logged_in'):
+            if st.button("Create Account"):
+                if signup_username and signup_password:
+                    signup(signup_username, signup_password)
+                else:
+                    st.error("Please enter both username and password.")
+    else:
+        # Main App Logic after Login
         st.sidebar.title("Operations")
         operation = st.sidebar.selectbox("Select Operation", ["Add Train", "View Trains", "Book Tickets", "View Seats"])
 
