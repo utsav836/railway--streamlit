@@ -115,6 +115,7 @@ def main():
             user = login(login_username, login_password)
             if user:
                 st.session_state.logged_in = True
+                st.session_state.username = login_username  # Store username
                 st.success("Logged in successfully!")
                 st.balloons()  # Optional: add a fun effect
             else:
@@ -138,7 +139,8 @@ def main():
         operation = st.sidebar.selectbox("Select Operation", ["Add Train", "View Trains", "Book Tickets", "View Seats"])
 
         if operation == "Add Train":
-            with st.sidebar.form(key='add_train_form'):
+            st.subheader("Add a New Train")
+            with st.form(key='add_train_form'):
                 train_name = st.text_input("Train Name", key='train_name')
                 train_number = st.text_input("Train Number", key='train_number')
                 start_destination = st.text_input("Start Destination", key='start_destination')
@@ -149,21 +151,24 @@ def main():
                     add_train(train_name, train_number, start_destination, end_destination)
 
         elif operation == "View Trains":
+            st.subheader("Available Trains")
             view_trains()
 
         elif operation == "Book Tickets":
-            train_number = st.sidebar.text_input("Enter Train Number")
-            passenger_name = st.sidebar.text_input("Passenger Name")
-            passenger_age = st.sidebar.text_input("Passenger Age")
-            passenger_gender = st.sidebar.selectbox("Passenger Gender", ["Male", "Female", "Other"])
-            seat_type = st.sidebar.selectbox("Seat Type", ["window", "aisle", "middle"])
+            st.subheader("Book Tickets")
+            train_number = st.text_input("Enter Train Number")
+            passenger_name = st.text_input("Passenger Name")
+            passenger_age = st.text_input("Passenger Age")
+            passenger_gender = st.selectbox("Passenger Gender", ["Male", "Female", "Other"])
+            seat_type = st.selectbox("Seat Type", ["window", "aisle", "middle"])
 
-            if st.sidebar.button("Book Ticket"):
+            if st.button("Book Ticket"):
                 book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
 
         elif operation == "View Seats":
-            train_number = st.sidebar.text_input("Enter Train Number to View Seats")
-            if st.sidebar.button("View Seats"):
+            st.subheader("View Seats for a Train")
+            train_number = st.text_input("Enter Train Number to View Seats")
+            if st.button("View Seats"):
                 view_seat(train_number)
 
     conn.close()
