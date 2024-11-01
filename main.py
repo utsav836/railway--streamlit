@@ -59,6 +59,8 @@ def view_seat(train_number):
             st.info("No seats found for this train.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
 
 def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
@@ -140,50 +142,6 @@ def get_chatbot_response(user_input):
 def main():
     st.title("Railway Management System")
     
-    st.markdown(
-        """
-        <style>
-        .reportview-container {
-            background: url("https://your-image-url.com/background.jpg") no-repeat center center fixed;
-            background-size: cover;
-        }
-        .sidebar .sidebar-content {
-            background-color: rgba(0,0,0,0.5);
-        }
-        .chatbot-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .chatbot-popup {
-            display: none;
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            width: 300px;
-            height: 400px;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 10px;
-            z-index: 1000;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
     operation = st.selectbox(
         "Choose Operation",
         [
@@ -278,27 +236,6 @@ def main():
         if user_input:
             response = get_chatbot_response(user_input)
             st.write(response)
-
-    st.markdown(
-        """
-        <div class="chatbot-button" onclick="document.getElementById('chatbot-popup').style.display='block'">
-            <img src="https://your-chatbot-icon-url.com/icon.png" alt="Chatbot" style="width: 30px; height: 30px;">
-        </div>
-        <div id="chatbot-popup" class="chatbot-popup">
-            <h4>Chat with Bot</h4>
-            <textarea id="chatbot-textarea" style="width: 100%; height: 80%;"></textarea>
-            <button onclick="sendMessage()">Send</button>
-        </div>
-        <script>
-        function sendMessage() {
-            const userMessage = document.getElementById('chatbot-textarea').value;
-            const response = "This is a placeholder response.";
-            document.getElementById('chatbot-textarea').value += "\\nBot: " + response;
-        }
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
 
 if __name__ == "__main__":
     main()
