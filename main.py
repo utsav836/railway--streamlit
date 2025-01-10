@@ -44,13 +44,27 @@ def categorize_seat(seat_number):
 # Function to view seat details for a train
 def view_seat(train_number):
     try:
+        # Check if the train exists in the trains table
+        train_exists = c.execute("SELECT 1 FROM trains WHERE train_no=?", (train_number,)).fetchone()
+        if not train_exists:
+            st.warning(f"Train {train_number} does not exist.")
+            return
+        
+        # Check if the seats table for the given train exists
+        table_exists = c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='seats_{train_number}'").fetchone()
+        if not table_exists:
+            st.warning(f"No seat data found for Train {train_number}.")
+            return
+        
+        # Query for the seats in the train
         seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM seats_{train_number} ORDER BY seat_number ASC")
         result = seat_query.fetchall()
+        
         if result:
             st.write("### Seat Details")
             st.dataframe(result)
         else:
-            st.info("No seats found for this train.")
+            st.info("No seats available for this train.")
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
