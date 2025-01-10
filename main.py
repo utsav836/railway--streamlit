@@ -47,7 +47,8 @@ def view_seat(train_number):
         seat_query = c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM seats_{train_number} ORDER BY seat_number ASC")
         result = seat_query.fetchall()
         if result:
-            st.dataframe(data=result)
+            st.write("### Seat Details")
+            st.dataframe(result)
         else:
             st.info("No seats found for this train.")
     except sqlite3.Error as e:
@@ -118,6 +119,9 @@ def search_train(train_number, train_name):
 
 # Main function to handle Streamlit interface and operations
 def main():
+    st.set_page_config(page_title="Railway Management System", layout="wide")
+    
+    # Sidebar for input
     st.sidebar.title("Railway Management System")
     operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
 
@@ -173,6 +177,10 @@ def main():
                 st.sidebar.success(f"Train found: {train_data}")
             else:
                 st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found.")
+    
+    # Center the display of messages in the main area
+    st.markdown("### Railway Management System")
+    st.write("Use the sidebar to manage the railway system operations.")
 
     conn.close()
 
