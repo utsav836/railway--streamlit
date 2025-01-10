@@ -36,17 +36,74 @@ def add_train_destination(train_name, train_number, start_destination, end_desti
         c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)",
                   (train_number, train_name, start_destination, end_destination))
         conn.commit()
+        create_seat_table(train_number)
         st.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
     except sqlite3.Error as e:
         st.error(f"SQLite error while adding train: {e}")
 
+# Create seats for the train in the database
+def create_seat_table(train_number):
+    try:
+        c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
+        conn.commit()
+        insert_seats(train_number)
+    except sqlite3.Error as e:
+        st.error(f"Error creating seat table: {e}")
+
+# Insert seat information into the database
+def insert_seats(train_number):
+    try:
+        for i in range(1, 201):  # Assuming there are 200 seats per train
+            seat_type = categorize_seat(i)
+            c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type) VALUES (?, ?)", (i, seat_type))
+        conn.commit()
+    except sqlite3.Error as e:
+        st.error(f"Error inserting seats: {e}")
+
+# Categorize seat type based on seat number
+def categorize_seat(seat_number):
+    if seat_number % 10 in [0, 4, 5, 9]:
+        return "window"
+    elif seat_number % 10 in [2, 3, 6, 7]:
+        return "aisle"
+    else:
+        return "middle"
+
 # Book tickets
 def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
-        # For simplicity, just display that the ticket is booked (you can extend this as needed)
-        st.success(f"Ticket booked for {passenger_name} ({passenger_gender}, {passenger_age}) on train {train_number}. Seat type: {seat_type}.")
+        seat_number = allocate_seat(train_number, seat_type)
+        if seat_number:
+            c.execute(f"UPDATE seats_{train_number} SET booked=1, passenger_name=?, passenger_age=?, passenger_gender=? WHERE seat_number=?",
+                      (passenger_name, passenger_age, passenger_gender, seat_number))
+            conn.commit()
+            st.success(f"Ticket booked for {passenger_name} on train {train_number}. Seat Number: {seat_number}, Seat Type: {seat_type}")
+        else:
+            st.warning("No available seats of this type.")
     except sqlite3.Error as e:
         st.error(f"SQLite error while booking tickets: {e}")
+
+# Allocate a seat based on the seat type
+def allocate_seat(train_number, seat_type):
+    try:
+        c.execute(f"SELECT seat_number FROM seats_{train_number} WHERE booked=0 AND seat_type=? ORDER BY seat_number ASC LIMIT 1", (seat_type,))
+        result = c.fetchone()
+        return result[0] if result else None
+    except sqlite3.Error as e:
+        st.error(f"SQLite error while allocating seat: {e}")
+        return None
+
+# View all seats for a specific train
+def view_seat(train_number):
+    try:
+        c.execute(f"SELECT seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender FROM seats_{train_number} ORDER BY seat_number ASC")
+        result = c.fetchall()
+        if result:
+            st.dataframe(result, columns=["Seat Number", "Seat Type", "Booked", "Passenger Name", "Passenger Age", "Passenger Gender"])
+        else:
+            st.info(f"No seats found for train {train_number}.")
+    except sqlite3.Error as e:
+        st.error(f"SQLite error while viewing seats: {e}")
 
 # Search for a train
 def search_train(train_number):
@@ -100,7 +157,7 @@ def main():
     
     else:
         # If logged in, show operation options
-        operation = st.selectbox("Select Operation", ["Add Train Destination", "Book Tickets", "Search Train"])
+        operation = st.selectbox("Select Operation", ["Add Train Destination", "Book Tickets", "View Seats", "Search Train"])
 
         if operation == "Add Train Destination":
             st.subheader("Add New Train")
@@ -122,6 +179,13 @@ def main():
 
             if st.button("Book Ticket"):
                 book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+
+        elif operation == "View Seats":
+            st.subheader("View All Seats")
+            train_number = st.text_input("Enter Train Number")
+
+            if st.button("View Seats"):
+                view_seat(train_number)
 
         elif operation == "Search Train":
             st.subheader("Search for a Train")
