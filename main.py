@@ -120,67 +120,67 @@ def search_train(train_number, train_name):
 # Main function to handle Streamlit interface and operations
 def main():
     st.set_page_config(page_title="Railway Management System", layout="wide")
-    
-    # Sidebar for input
-    st.sidebar.title("Railway Management System")
-    operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
 
-    if operation == "Create Database":
-        create_db()
-        st.sidebar.success("Database created successfully.")
+    # Centralized layout using columns
+    col1, col2, col3 = st.columns([1, 3, 1])  # Creates three columns (for centering content)
 
-    elif operation == "Add Train Destination":
-        train_name = st.sidebar.text_input("Train Name")
-        train_number = st.sidebar.text_input("Train Number")
-        start_destination = st.sidebar.text_input("Start Destination")
-        end_destination = st.sidebar.text_input("End Destination")
+    with col2:
+        # Title in center
+        st.markdown("# Railway Management System")
+        operation = st.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
 
-        if st.sidebar.button("Add Train"):
-            add_train_destination(train_name, train_number, start_destination, end_destination)
-            st.sidebar.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
+        if operation == "Create Database":
+            create_db()
+            st.success("Database created successfully.")
 
-    elif operation == "Cancel Train":
-        train_number = st.sidebar.text_input("Train Number to Cancel")
+        elif operation == "Add Train Destination":
+            train_name = st.text_input("Train Name")
+            train_number = st.text_input("Train Number")
+            start_destination = st.text_input("Start Destination")
+            end_destination = st.text_input("End Destination")
 
-        if st.sidebar.button("Cancel Train"):
-            cancel_train(train_number)
+            if st.button("Add Train"):
+                add_train_destination(train_name, train_number, start_destination, end_destination)
+                st.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
 
-    elif operation == "Delete Train":
-        train_number = st.sidebar.text_input("Train Number to Delete")
+        elif operation == "Cancel Train":
+            train_number = st.text_input("Train Number to Cancel")
 
-        if st.sidebar.button("Delete Train"):
-            delete_train(train_number)
+            if st.button("Cancel Train"):
+                cancel_train(train_number)
 
-    elif operation == "View Seats":
-        train_number = st.sidebar.text_input("Enter Train Number to View Seats")
+        elif operation == "Delete Train":
+            train_number = st.text_input("Train Number to Delete")
 
-        if st.sidebar.button("View Seats"):
-            view_seat(train_number)
+            if st.button("Delete Train"):
+                delete_train(train_number)
 
-    elif operation == "Book Tickets":
-        train_number = st.sidebar.text_input("Enter Train Number to Book Tickets")
-        passenger_name = st.sidebar.text_input("Passenger Name")
-        passenger_age = st.sidebar.text_input("Passenger Age")
-        passenger_gender = st.sidebar.selectbox("Passenger Gender", ["Male", "Female", "Other"])
-        seat_type = st.sidebar.selectbox("Seat Type", ["window", "aisle", "middle"])
+        elif operation == "View Seats":
+            train_number = st.text_input("Enter Train Number to View Seats")
 
-        if st.sidebar.button("Book Ticket"):
-            book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+            if st.button("View Seats"):
+                view_seat(train_number)
 
-    elif operation == "Search Train":
-        train_number = st.sidebar.text_input("Enter Train Number to Search")
-        train_name = st.sidebar.text_input("Enter Train Name (optional)")
+        elif operation == "Book Tickets":
+            train_number = st.text_input("Enter Train Number to Book Tickets")
+            passenger_name = st.text_input("Passenger Name")
+            passenger_age = st.text_input("Passenger Age")
+            passenger_gender = st.selectbox("Passenger Gender", ["Male", "Female", "Other"])
+            seat_type = st.selectbox("Seat Type", ["window", "aisle", "middle"])
 
-        if st.sidebar.button("Search Train"):
-            train_data = search_train(train_number, train_name)
-            if train_data:
-                st.sidebar.success(f"Train found: {train_data}")
-            else:
-                st.sidebar.warning(f"Train {train_number} with name '{train_name}' not found.")
-    
-    # Center the display of messages in the main area
-    st.markdown("### Railway Management System")
-    st.write("Use the sidebar to manage the railway system operations.")
+            if st.button("Book Ticket"):
+                book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
+
+        elif operation == "Search Train":
+            train_number = st.text_input("Enter Train Number to Search")
+            train_name = st.text_input("Enter Train Name (optional)")
+
+            if st.button("Search Train"):
+                train_data = search_train(train_number, train_name)
+                if train_data:
+                    st.success(f"Train found: {train_data}")
+                else:
+                    st.warning(f"Train {train_number} with name '{train_name}' not found.")
 
     conn.close()
 
