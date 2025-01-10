@@ -1,16 +1,17 @@
 import streamlit as st
 import sqlite3
 
-# Establish database connection
+# Establish SQLite database connection
 conn = sqlite3.connect('railwaydb.db', check_same_thread=False)
 c = conn.cursor()
 
+# Create necessary tables
 def create_db():
-    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id TEXT, password TEXT, designation TEXT)")
-    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT, train_name TEXT, start_destination TEXT, end_destination TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS trains (train_no TEXT PRIMARY KEY, train_name TEXT, start_destination TEXT, end_destination TEXT)")
     conn.commit()
 
+# Sign up function
 def signup(username, password):
     try:
         c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
@@ -21,70 +22,54 @@ def signup(username, password):
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
 
+# Login function
 def login(username, password):
     user_query = c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
     return user_query.fetchone()
 
+# Add train to database
 def add_train_destination(train_name, train_number, start_destination, end_destination):
     try:
-        # Debugging: Ensure that all values are being passed correctly
-        st.write(f"Adding train with details: {train_name}, {train_number}, {start_destination}, {end_destination}")
-
-        # Ensure that inputs are not empty
         if not all([train_name, train_number, start_destination, end_destination]):
             st.error("All fields must be filled out.")
             return
-        
-        # Insert train details into database
-        c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)", 
+        c.execute("INSERT INTO trains (train_no, train_name, start_destination, end_destination) VALUES (?, ?, ?, ?)",
                   (train_number, train_name, start_destination, end_destination))
         conn.commit()
-        
-        # Create seat table for the train
-        create_seat_table(train_number)
         st.success(f"Train added successfully: {train_name}, Train Number: {train_number}, From: {start_destination}, To: {end_destination}")
-
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(f"SQLite error while adding train: {e}")
 
-def create_seat_table(train_number):
+# Book tickets
+def book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type):
     try:
-        c.execute(f"CREATE TABLE IF NOT EXISTS seats_{train_number} (seat_number INTEGER PRIMARY KEY, seat_type TEXT, booked INTEGER DEFAULT 0, passenger_name TEXT, passenger_age TEXT, passenger_gender TEXT)")
-        conn.commit()
-        insert_seats(train_number)
+        # For simplicity, just display that the ticket is booked (you can extend this as needed)
+        st.success(f"Ticket booked for {passenger_name} ({passenger_gender}, {passenger_age}) on train {train_number}. Seat type: {seat_type}.")
     except sqlite3.Error as e:
-        st.error(f"Error creating seat table: {e}")
+        st.error(f"SQLite error while booking tickets: {e}")
 
-def insert_seats(train_number):
+# Search for a train
+def search_train(train_number):
     try:
-        for i in range(1, 201):  # Assuming there are 200 seats per train
-            val = categorize_seat(i)
-            parameters = (i, val, 0, '', '', '')
-            c.execute(f"INSERT INTO seats_{train_number} (seat_number, seat_type, booked, passenger_name, passenger_age, passenger_gender) VALUES (?, ?, ?, ?, ?, ?)", parameters)
-        conn.commit()
+        c.execute("SELECT * FROM trains WHERE train_no=?", (train_number,))
+        train = c.fetchone()
+        if train:
+            st.success(f"Train found: {train}")
+        else:
+            st.warning("Train not found.")
     except sqlite3.Error as e:
-        st.error(f"Error inserting seats: {e}")
+        st.error(f"SQLite error while searching train: {e}")
 
-def categorize_seat(seat_number):
-    if seat_number % 10 in [0, 4, 5, 9]:
-        return "window"
-    elif seat_number % 10 in [2, 3, 6, 7]:
-        return "aisle"
-    else:
-        return "middle"
-
-# The rest of your app continues here...
-# (including login, signup, view_seat, book_tickets, etc.)
-
+# Main app function
 def main():
-    create_db()
+    create_db()  # Create the database and tables if they don't exist
 
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
 
     st.title("Railway Booking Management System")
 
-    # Conditional navigation
+    # Conditional login/signup flow
     if not st.session_state.logged_in:
         page = st.sidebar.radio("Select Page", ["Login", "Create Account"])
 
@@ -114,25 +99,40 @@ def main():
                     st.error("Please enter both username and password.")
     
     else:
-        st.sidebar.title("Operations")
-        operation = st.sidebar.selectbox("Select Operation", ["Create Database", "Add Train Destination", "Cancel Train", "Delete Train", "View Seats", "Book Tickets", "Search Train"])
+        # If logged in, show operation options
+        operation = st.selectbox("Select Operation", ["Add Train Destination", "Book Tickets", "Search Train"])
 
-        if operation == "Create Database":
-            create_db()
-            st.sidebar.success("Database created successfully.")
+        if operation == "Add Train Destination":
+            st.subheader("Add New Train")
+            train_name = st.text_input("Train Name")
+            train_number = st.text_input("Train Number")
+            start_destination = st.text_input("Start Destination")
+            end_destination = st.text_input("End Destination")
 
-        elif operation == "Add Train Destination":
-            train_name = st.sidebar.text_input("Train Name")
-            train_number = st.sidebar.text_input("Train Number")
-            start_destination = st.sidebar.text_input("Start Destination")
-            end_destination = st.sidebar.text_input("End Destination")
-
-            if st.sidebar.button("Add Train"):
+            if st.button("Add Train"):
                 add_train_destination(train_name, train_number, start_destination, end_destination)
 
-        # Handle other operations (Cancel Train, Delete Train, View Seats, etc.)
+        elif operation == "Book Tickets":
+            st.subheader("Book Tickets")
+            train_number = st.text_input("Train Number")
+            passenger_name = st.text_input("Passenger Name")
+            passenger_age = st.text_input("Passenger Age")
+            passenger_gender = st.selectbox("Passenger Gender", ["Male", "Female", "Other"])
+            seat_type = st.selectbox("Seat Type", ["Window", "Aisle", "Middle"])
 
-    conn.close()
+            if st.button("Book Ticket"):
+                book_tickets(train_number, passenger_name, passenger_age, passenger_gender, seat_type)
 
+        elif operation == "Search Train":
+            st.subheader("Search for a Train")
+            train_number = st.text_input("Enter Train Number")
+
+            if st.button("Search Train"):
+                search_train(train_number)
+
+# Run the app
 if __name__ == "__main__":
     main()
+
+# Close database connection at the end
+conn.close()
